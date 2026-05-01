@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import sessions
+from routers import sessions, problems
 
 app = FastAPI(
     title="Toán Socratic API",
@@ -19,6 +19,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(sessions.router)
+app.include_router(problems.router)
 
 
 @app.get("/")
