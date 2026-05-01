@@ -1,9 +1,6 @@
-"""
-Environment configuration for Toán Socratic API
-"""
+from typing import Optional
 
 from pydantic_settings import BaseSettings
-from typing import Optional
 
 
 class Settings(BaseSettings):
