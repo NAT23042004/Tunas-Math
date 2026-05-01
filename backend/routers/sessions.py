@@ -1,17 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 
 from db.database import get_db
-from db.models import Session, User, Problem, DialogueState, SessionStatus
+from db.models import Session, Problem, DialogueState, SessionStatus
 from db.schemas import (
     SessionCreate, SessionResponse, SessionComplete,
-    SessionCompleteResponse, MessageCreate, MessageResponse
+    SessionCompleteResponse, MessageCreate
 )
-from ai.dialogue import DialogueStateMachine, HintLevel
 from ai.context_builder import SessionContextBuilder
 from ai.claude_client import claude_client
 from ai.prompts import format_system_prompt, GEOMETRY_TOOL
@@ -39,7 +37,7 @@ async def create_session(
         hint_count=0,
         fail_count=0,
         messages=[],
-        started_at=datetime.utcnow()
+        started_at=datetime.now(timezone.utc)
     )
 
     db.add(new_session)
@@ -88,7 +86,7 @@ async def send_message(
     user_message = {
         "role": "user",
         "content": message_data.content,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
     session.messages.append(user_message)
 
@@ -160,7 +158,7 @@ async def send_message(
         ai_message = {
             "role": "assistant",
             "content": response["text"],
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "tool_calls": response.get("tool_calls", [])
         }
         session.messages.append(ai_message)
