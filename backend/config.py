@@ -1,0 +1,45 @@
+"""
+Environment configuration for Toán Socratic API
+"""
+
+from pydantic_settings import BaseSettings
+from typing import Optional
+
+
+class Settings(BaseSettings):
+    """Application settings"""
+
+    # API Configuration
+    app_name: str = "Toán Socratic API"
+    app_version: str = "0.1.0"
+    debug: bool = True
+
+    # Server Configuration
+    host: str = "0.0.0.0"
+    port: int = 8000
+
+    # Anthropic API
+    anthropic_api_key: str
+
+    # Database
+    database_url: str = "postgresql+asyncpg://user:pass@localhost:5432/toansc"
+
+    # JWT Configuration
+    jwt_secret: str
+    jwt_algorithm: str = "HS256"
+    jwt_expiration_hours: int = 24
+
+    # Google OAuth
+    google_client_id: Optional[str] = None
+    google_client_secret: Optional[str] = None
+
+    # NextAuth
+    nextauth_secret: str
+    nextauth_url: str = "http://localhost:3000"
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+
+
+settings = Settings()
