@@ -1,8 +1,3 @@
-"""
-Toán Socratic - FastAPI Backend
-AI-powered Vietnamese math tutor for Grade 12 students
-"""
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
