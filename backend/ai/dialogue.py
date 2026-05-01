@@ -37,6 +37,9 @@ class DialogueStateMachine:
         if self.current_state in [DialogueState.HEURISTIC, DialogueState.REVIEW]:
             self.current_state = DialogueState.RECTIFY
             self.fail_count += 1
+        elif self.current_state == DialogueState.RECTIFY:
+            # Already in rectify, just increment failure count
+            self.fail_count += 1
 
     def transition_to_summarize(self) -> None:
         """Transition to SUMMARIZE state when student solves the problem"""
