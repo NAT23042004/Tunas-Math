@@ -11,7 +11,7 @@ from db.schemas import (
     SessionCompleteResponse, MessageCreate
 )
 from ai.context_builder import SessionContextBuilder
-from ai.claude_client import claude_client
+from ai.llm_client import llm_client
 from ai.prompts import format_system_prompt, GEOMETRY_TOOL
 
 
@@ -131,10 +131,10 @@ async def send_message(
     if problem_context and problem_context.get("is_geometry"):
         tools.append(GEOMETRY_TOOL)
 
-    # Convert messages to Claude format
-    claude_messages = []
+    # Convert messages to LLM format
+    llm_messages = []
     for msg in session.messages:
-        claude_messages.append({
+        llm_messages.append({
             "role": msg["role"],
             "content": msg["content"]
         })
@@ -142,14 +142,14 @@ async def send_message(
     # Get AI response
     try:
         if tools:
-            response = await claude_client.get_response_with_tools(
-                messages=claude_messages,
+            response = await llm_client.get_response_with_tools(
+                messages=llm_messages,
                 system_prompt=system_prompt,
                 tools=tools
             )
         else:
-            response_text = await claude_client.get_response(
-                messages=claude_messages,
+            response_text = await llm_client.get_response(
+                messages=llm_messages,
                 system_prompt=system_prompt
             )
             response = {"text": response_text, "tool_calls": []}
@@ -207,7 +207,7 @@ async def complete_session(
 
     # Update session
     session.status = SessionStatus.COMPLETED
-    session.ended_at = datetime.utcnow()
+    session.ended_at = datetime.now(timezone.utc)
     session.student_rating = completion_data.student_rating
 
     # Generate summary (simplified for now)
