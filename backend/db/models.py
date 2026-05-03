@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, Boolean, Integer, Float, DateTime, ForeignKey, Enum as SQLEnum, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB, VECTOR
+from sqlalchemy.dialects.postgresql import UUID, JSONB
+from pgvector.sqlalchemy import Vector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -62,7 +63,7 @@ class Problem(Base):
     geometry_params = Column(JSONB, nullable=True)
     source = Column(String, nullable=True)
     misconceptions = Column(JSONB, nullable=True)
-    embedding = Column(VECTOR(1536), nullable=True)
+    embedding = Column(Vector(1536), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
