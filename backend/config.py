@@ -18,6 +18,18 @@ class Settings(BaseSettings):
     # Anthropic API
     anthropic_api_key: str
 
+    # LLM Configuration
+    llm_provider: str = "anthropic"  # anthropic, openai, cohere, azure, qwen, gemini
+    llm_model: str = "claude-sonnet-4-6"
+    llm_api_key: Optional[str] = None  # Falls back to provider-specific key if not set
+    llm_temperature: float = 0.7
+    llm_max_tokens: int = 1024
+
+    # Provider-specific API keys
+    openai_api_key: Optional[str] = None
+    qwen_api_key: Optional[str] = None
+    gemini_api_key: Optional[str] = None
+
     # Database
     database_url: str = "postgresql+asyncpg://user:pass@localhost:5432/toansc"
 
