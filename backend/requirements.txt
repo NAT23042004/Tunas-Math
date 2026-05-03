@@ -9,7 +9,8 @@ asyncpg==0.29.0
 alembic==1.12.1
 
 # AI/ML
-anthropic==0.7.8
+litellm==1.17.9
+anthropic==0.7.8  # Keep for Anthropic-specific features if needed
 
 # Auth
 python-jose[cryptography]==3.3.0
