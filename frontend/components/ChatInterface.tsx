@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Message } from "./Message";
 import { LoadingDots } from "./LoadingDots";
+import { GeometryViewer } from "./GeometryViewer";
 
 interface MessageType {
   role: "user" | "assistant";
@@ -37,6 +38,21 @@ export function ChatInterface() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Mock problem with geometry for demo
+  useEffect(() => {
+    if (!problem) {
+      setProblem({
+        statement_latex: "Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh 4 cm. Cạnh SA vuông góc với mặt đáy, SA = 6 cm.",
+        answer: "V = 32 cm³",
+        is_geometry: true,
+        geometry_params: {
+          solid_type: "pyramid",
+          params: { base_shape: "square", base_side: 4, height: 6 }
+        }
+      });
+    }
+  }, []);
 
   // Initialize session
   useEffect(() => {
@@ -270,7 +286,9 @@ export function ChatInterface() {
       {/* Viewer Section - 3D Geometry */}
       <div className="w-[380px] flex flex-col bg-bg">
         <div className="p-4 border-b border-line bg-surface flex items-center gap-2">
-          <span className="text-sm font-medium flex-1">Hình 3D - Hình chóp</span>
+          <span className="text-sm font-medium flex-1">
+            Hình 3D - {problem?.geometry_params?.solid_type === "pyramid" ? "Hình chóp" : "Hình học"}
+          </span>
           <button className="text-[10px] px-3 py-1 rounded-full border border-line-2 hover:bg-surface-2">
             Xoay
           </button>
@@ -279,14 +297,23 @@ export function ChatInterface() {
           </button>
         </div>
 
-        {/* 3D Canvas Placeholder */}
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="text-center">
-            <div className="text-4xl mb-2">△</div>
-            <p className="text-xs text-ink-4">
-              {problem?.is_geometry ? "Hình 3D sẽ hiển thị ở đây" : "Bài toán không có hình học"}
-            </p>
-          </div>
+        {/* 3D Canvas with GeometryViewer */}
+        <div className="flex-1 relative">
+          {problem?.is_geometry ? (
+            <GeometryViewer
+              solid_type={problem.geometry_params?.solid_type}
+              params={problem.geometry_params?.params}
+            />
+          ) : (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="text-center">
+                <div className="text-4xl mb-2">📐</div>
+                <p className="text-xs text-ink-4">
+                  Bài toán không có hình học
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Info Panel */}
