@@ -1,0 +1,1669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toán Socratic — Implementation Spec</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14;
+  --bg2: #13161e;
+  --bg3: #1a1e2a;
+  --bg4: #212636;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8eaf0;
+  --text2: #9aa0b4;
+  --text3: #5a6178;
+  --accent: #4f8ef7;
+  --accent2: #7c5af5;
+  --green: #3dd68c;
+  --amber: #f5a623;
+  --red: #f56060;
+  --teal: #26c6b0;
+  --pink: #f06292;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Lora', serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.7;
+}
+/* ── HEADER ── */
+header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 64px;
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text);
+  letter-spacing: -.01em;
+}
+.logo span { color: var(--accent); }
+nav { display: flex; gap: 2px; }
+nav a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text3);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: color .15s, background .15s;
+}
+nav a:hover { color: var(--text); background: var(--bg3); }
+/* ── HERO ── */
+.hero {
+  padding: 80px 64px 64px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.hero-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 8px;
+}
+.hero-tag::before { content: ''; width: 24px; height: 1px; background: var(--accent); }
+.hero h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  margin-bottom: 20px;
+}
+.hero h1 em { font-style: normal; color: var(--accent2); }
+.hero-desc {
+  font-size: 16px;
+  color: var(--text2);
+  max-width: 600px;
+  line-height: 1.65;
+  margin-bottom: 40px;
+}
+.hero-stats {
+  display: flex; gap: 48px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+.stat-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+.stat-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+  letter-spacing: .04em;
+}
+/* ── LAYOUT ── */
+.page { max-width: 1100px; margin: 0 auto; padding: 0 64px 120px; }
+/* ── SECTION ── */
+.section { padding: 72px 0 60px; border-top: 1px solid var(--border); }
+.section-head {
+  display: flex; align-items: flex-start; gap: 20px;
+  margin-bottom: 48px;
+}
+.section-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  padding-top: 6px;
+  min-width: 32px;
+}
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  margin-bottom: 6px;
+}
+.section-sub { font-size: 14px; color: var(--text2); max-width: 560px; }
+/* ── ARCH DIAGRAM ── */
+.arch-wrap {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px;
+  overflow-x: auto;
+}
+/* ── LAYER BOXES ── */
+.arch-layer { margin-bottom: 16px; }
+.arch-layer-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+.arch-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.arch-box {
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 400;
+  display: flex; flex-direction: column; gap: 4px;
+  border: 1px solid transparent;
+  min-width: 140px;
+  flex: 1;
+}
+.arch-box-name { font-size: 12px; font-weight: 500; }
+.arch-box-tech { font-size: 10px; opacity: .6; }
+.box-blue { background: rgba(79,142,247,.1); border-color: rgba(79,142,247,.25); color: #93bcfc; }
+.box-purple { background: rgba(124,90,245,.1); border-color: rgba(124,90,245,.25); color: #b09dfa; }
+.box-green { background: rgba(61,214,140,.1); border-color: rgba(61,214,140,.25); color: #7eddb0; }
+.box-amber { background: rgba(245,166,35,.1); border-color: rgba(245,166,35,.25); color: #f5c97a; }
+.box-teal { background: rgba(38,198,176,.1); border-color: rgba(38,198,176,.25); color: #7addd4; }
+.box-red { background: rgba(245,96,96,.1); border-color: rgba(245,96,96,.25); color: #f5a0a0; }
+.arch-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 0;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+.arch-connector::before, .arch-connector::after {
+  content: ''; flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2));
+}
+.arch-connector::after { background: linear-gradient(90deg, var(--border2), transparent); }
+/* ── SOCRATIC ENGINE DIAGRAM ── */
+.flow-diagram {
+  display: flex;
+  gap: 0;
+  align-items: center;
+  overflow-x: auto;
+  padding: 32px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+.flow-node {
+  flex-shrink: 0;
+  border-radius: 10px;
+  padding: 14px 18px;
+  text-align: center;
+  min-width: 130px;
+  border: 1px solid transparent;
+}
+.flow-node-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.flow-node-desc {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  opacity: .65;
+  line-height: 1.4;
+}
+.flow-arrow {
+  flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 8px;
+  color: var(--text3);
+  font-size: 18px;
+}
+.flow-arrow-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: .06em;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+/* ── SPEC TABLES ── */
+.spec-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 24px; }
+.spec-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+}
+.spec-table td {
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  vertical-align: top;
+  line-height: 1.55;
+}
+.spec-table tr:hover td { background: var(--bg2); }
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--bg3);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+/* ── CODE BLOCK ── */
+.code-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.code-block-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+}
+.code-block-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text2);
+}
+.code-block-lang {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: .06em;
+}
+.code-block pre {
+  padding: 20px 24px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--text2);
+}
+.c-kw { color: var(--accent2); }
+.c-fn { color: #7eddb0; }
+.c-str { color: #f5c97a; }
+.c-cm { color: var(--text3); font-style: italic; }
+.c-num { color: var(--pink); }
+.c-type { color: var(--teal); }
+.c-var { color: var(--text); }
+/* ── SPRINT TIMELINE ── */
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before {
+  content: '';
+  position: absolute; left: 8px; top: 0; bottom: 0;
+  width: 1px; background: var(--border2);
+}
+.sprint-block { position: relative; margin-bottom: 40px; }
+.sprint-dot {
+  position: absolute; left: -28px; top: 4px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid;
+}
+.dot-blue { border-color: var(--accent); background: rgba(79,142,247,.2); }
+.dot-purple { border-color: var(--accent2); background: rgba(124,90,245,.2); }
+.dot-green { border-color: var(--green); background: rgba(61,214,140,.2); }
+.dot-amber { border-color: var(--amber); background: rgba(245,166,35,.2); }
+.sprint-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+}
+.sprint-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+.tag-blue { color: var(--accent); border-color: rgba(79,142,247,.3); background: rgba(79,142,247,.08); }
+.tag-purple { color: var(--accent2); border-color: rgba(124,90,245,.3); background: rgba(124,90,245,.08); }
+.tag-green { color: var(--green); border-color: rgba(61,214,140,.3); background: rgba(61,214,140,.08); }
+.tag-amber { color: var(--amber); border-color: rgba(245,166,35,.3); background: rgba(245,166,35,.08); }
+.sprint-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+}
+.sprint-weeks {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  margin-left: auto;
+}
+.week-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.week-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.week-card-head {
+  padding: 10px 16px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.week-card-head .day-range { font-size: 10px; color: var(--text3); }
+.week-tasks { list-style: none; padding: 12px 0; }
+.week-tasks li {
+  padding: 6px 16px;
+  font-size: 13px;
+  color: var(--text2);
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px; align-items: flex-start;
+  line-height: 1.4;
+}
+.week-tasks li:last-child { border-bottom: none; }
+.task-bullet {
+  width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 5px;
+}
+.bullet-blue { background: var(--accent); }
+.bullet-purple { background: var(--accent2); }
+.bullet-green { background: var(--green); }
+.bullet-amber { background: var(--amber); }
+.gate-box {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: rgba(61,214,140,.07);
+  border: 1px solid rgba(61,214,140,.2);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--green);
+  display: flex; gap: 10px; align-items: center;
+}
+/* ── API SPEC ── */
+.endpoint-block {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.endpoint-head {
+  padding: 14px 20px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 12px; align-items: center;
+}
+.method-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 6px;
+  min-width: 52px;
+  text-align: center;
+}
+.mb-get { background: rgba(61,214,140,.15); color: var(--green); }
+.mb-post { background: rgba(79,142,247,.15); color: var(--accent); }
+.mb-put { background: rgba(245,166,35,.15); color: var(--amber); }
+.mb-del { background: rgba(245,96,96,.15); color: var(--red); }
+.endpoint-path {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+}
+.endpoint-summary { font-size: 13px; color: var(--text2); }
+.endpoint-body { padding: 16px 20px; }
+.endpoint-section-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+  margin-top: 14px;
+}
+.endpoint-section-lbl:first-child { margin-top: 0; }
+.param-row {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.param-row:last-child { border-bottom: none; }
+.param-name { font-family: 'JetBrains Mono', monospace; color: var(--accent); min-width: 160px; font-size: 12px; }
+.param-type { color: var(--teal); font-family: 'JetBrains Mono', monospace; font-size: 12px; min-width: 80px; }
+.param-req { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--red); min-width: 50px; }
+.param-opt { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); min-width: 50px; }
+.param-desc { color: var(--text2); line-height: 1.45; }
+/* ── PROMPT SPEC ── */
+.prompt-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.prompt-head {
+  padding: 12px 20px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text2);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.prompt-body {
+  padding: 20px 24px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--text2);
+  white-space: pre-wrap;
+}
+.p-section { color: var(--accent2); font-weight: 500; }
+.p-rule { color: var(--green); }
+.p-example { color: var(--amber); }
+.p-var { color: var(--accent); }
+/* ── COMPONENT TREE ── */
+.tree { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; }
+.tree-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 5px 0;
+  color: var(--text2);
+  line-height: 1.4;
+}
+.tree-item .ti-name { color: var(--text); }
+.tree-item .ti-desc { color: var(--text3); font-size: 11px; }
+.tree-item .ti-tech { color: var(--teal); font-size: 11px; }
+/* ── SUBHEADS ── */
+.subhead {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  margin-top: 36px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.subhead:first-child { margin-top: 0; }
+/* ── CALLOUT ── */
+.callout {
+  padding: 16px 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.callout-icon { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+.callout-blue { background: rgba(79,142,247,.08); border: 1px solid rgba(79,142,247,.2); color: #b0c8fc; }
+.callout-amber { background: rgba(245,166,35,.08); border: 1px solid rgba(245,166,35,.2); color: #f5d49a; }
+.callout-green { background: rgba(61,214,140,.08); border: 1px solid rgba(61,214,140,.2); color: #9adfc0; }
+/* ── ENV TABLE ── */
+.env-row {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.env-row:last-child { border-bottom: none; }
+.env-key {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  padding: 9px 14px;
+  min-width: 240px;
+  border-right: 1px solid var(--border);
+}
+.env-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text3);
+  padding: 9px 14px;
+  flex: 1;
+}
+.env-table {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+/* ── 3D SPEC GRID ── */
+.geo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+.geo-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+.geo-card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.geo-card-params {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.7;
+}
+/* ── TESTING ── */
+.test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.test-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.test-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex; gap: 8px; align-items: center;
+}
+.test-items { list-style: none; }
+.test-items li {
+  font-size: 13px;
+  color: var(--text2);
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.4;
+}
+.test-items li:last-child { border-bottom: none; }
+.test-items li::before { content: '✓ '; color: var(--green); font-size: 11px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Toán<span>Socratic</span> <span style="color:var(--text3);font-weight:400;font-size:13px;font-family:'JetBrains Mono',monospace;">/ impl spec v1.0</span></div>
+  <nav>
+    <a href="#arch">Architecture</a>
+    <a href="#socratic">Socratic Engine</a>
+    <a href="#api">API Spec</a>
+    <a href="#3d">3D Visualizer</a>
+    <a href="#db">Database</a>
+    <a href="#frontend">Frontend</a>
+    <a href="#sprint">Sprint Plan</a>
+    <a href="#env">Environment</a>
+  </nav>
+</header>
+
+<div style="max-width:900px;margin:0 auto;">
+<div class="hero">
+  <div class="hero-tag">Implementation Specification</div>
+  <h1>Build <em>Plan</em> &<br>Architecture</h1>
+  <p class="hero-desc">A full engineering specification for the Toán Socratic platform — covering system architecture, Socratic dialogue design, API contracts, 3D visualizer implementation, database schema, frontend component tree, and an 8-week sprint plan.</p>
+  <div class="hero-stats">
+    <div><div class="stat-val">8</div><div class="stat-lbl">WEEKS BUILD</div></div>
+    <div><div class="stat-val">4</div><div class="stat-lbl">SPRINTS</div></div>
+    <div><div class="stat-val">16</div><div class="stat-lbl">API ENDPOINTS</div></div>
+    <div><div class="stat-val">6</div><div class="stat-lbl">3D GEO TYPES</div></div>
+  </div>
+</div>
+</div>
+
+<div class="page">
+
+<!-- ════════════════════════════════ ARCHITECTURE ════════════════════════════════ -->
+<section class="section" id="arch">
+  <div class="section-head">
+    <div class="section-num">01</div>
+    <div>
+      <div class="section-title">System Architecture</div>
+      <div class="section-sub">Full-stack overview — how each layer connects, what technology powers it, and the data flow from student to AI and back.</div>
+    </div>
+  </div>
+
+  <div class="arch-wrap">
+    <!-- Layer 1: Client -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">── Client Layer</div>
+      <div class="arch-row">
+        <div class="arch-box box-blue">
+          <div class="arch-box-name">Chat UI</div>
+          <div class="arch-box-tech">Next.js 14 · React · Tailwind</div>
+        </div>
+        <div class="arch-box box-blue">
+          <div class="arch-box-name">3D Geometry Viewer</div>
+          <div class="arch-box-tech">Three.js · WebGL · OrbitControls</div>
+        </div>
+        <div class="arch-box box-blue">
+          <div class="arch-box-name">Math Renderer</div>
+          <div class="arch-box-tech">KaTeX · react-katex</div>
+        </div>
+        <div class="arch-box box-blue">
+          <div class="arch-box-name">Dashboard & Progress</div>
+          <div class="arch-box-tech">Recharts · Radix UI</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-connector">HTTPS / WebSocket (streaming)</div>
+
+    <!-- Layer 2: API Gateway -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">── API Layer</div>
+      <div class="arch-row">
+        <div class="arch-box box-purple">
+          <div class="arch-box-name">FastAPI Server</div>
+          <div class="arch-box-tech">Python 3.11 · Uvicorn · async</div>
+        </div>
+        <div class="arch-box box-purple">
+          <div class="arch-box-name">Auth Middleware</div>
+          <div class="arch-box-tech">JWT · NextAuth · Google OAuth</div>
+        </div>
+        <div class="arch-box box-purple">
+          <div class="arch-box-name">Session Manager</div>
+          <div class="arch-box-tech">Dialogue state · History mgmt</div>
+        </div>
+        <div class="arch-box box-purple">
+          <div class="arch-box-name">Problem Resolver</div>
+          <div class="arch-box-tech">Topic router · RAG retrieval</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-connector">Anthropic SDK · Python</div>
+
+    <!-- Layer 3: AI Pipeline -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">── AI Pipeline</div>
+      <div class="arch-row">
+        <div class="arch-box box-teal">
+          <div class="arch-box-name">Socratic Engine</div>
+          <div class="arch-box-tech">claude-sonnet-4-6 · System prompt</div>
+        </div>
+        <div class="arch-box box-teal">
+          <div class="arch-box-name">RAG Context Builder</div>
+          <div class="arch-box-tech">pgvector · Embedding search</div>
+        </div>
+        <div class="arch-box box-teal">
+          <div class="arch-box-name">Misconception Catalog</div>
+          <div class="arch-box-tech">JSON · Per-topic error patterns</div>
+        </div>
+        <div class="arch-box box-teal">
+          <div class="arch-box-name">Tool Use Handler</div>
+          <div class="arch-box-tech">Geometry trigger · Hint escalation</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-connector">SQLAlchemy ORM · asyncpg</div>
+
+    <!-- Layer 4: Data -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">── Data Layer</div>
+      <div class="arch-row">
+        <div class="arch-box box-green">
+          <div class="arch-box-name">PostgreSQL + pgvector</div>
+          <div class="arch-box-tech">Users · Sessions · Progress · Problems</div>
+        </div>
+        <div class="arch-box box-green">
+          <div class="arch-box-name">Redis Cache</div>
+          <div class="arch-box-tech">Active session state · Rate limiting</div>
+        </div>
+        <div class="arch-box box-amber">
+          <div class="arch-box-name">Cloudflare R2</div>
+          <div class="arch-box-tech">Static assets · OCR uploads</div>
+        </div>
+        <div class="arch-box box-amber">
+          <div class="arch-box-name">Problem Bank JSON</div>
+          <div class="arch-box-tech">200+ THPT problems · Curriculum tree</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arch-connector">Vercel CDN · Railway PaaS</div>
+
+    <!-- Layer 5: Infra -->
+    <div class="arch-layer">
+      <div class="arch-layer-title">── Infrastructure</div>
+      <div class="arch-row">
+        <div class="arch-box box-red">
+          <div class="arch-box-name">Vercel (Frontend)</div>
+          <div class="arch-box-tech">Edge network · CI/CD · Preview deploys</div>
+        </div>
+        <div class="arch-box box-red">
+          <div class="arch-box-name">Railway (Backend)</div>
+          <div class="arch-box-tech">FastAPI · PostgreSQL · Redis</div>
+        </div>
+        <div class="arch-box box-red">
+          <div class="arch-box-name">Sentry</div>
+          <div class="arch-box-tech">Error tracking · Performance</div>
+        </div>
+        <div class="arch-box box-red">
+          <div class="arch-box-name">GitHub Actions</div>
+          <div class="arch-box-tech">Lint · Test · Deploy on merge</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="subhead" style="margin-top:40px;">Data Flow — A Single Socratic Turn</div>
+  <div class="flow-diagram">
+    <div class="flow-node box-blue">
+      <div class="flow-node-name" style="color:#93bcfc;">Student</div>
+      <div class="flow-node-desc">Types answer or question in chat UI</div>
+    </div>
+    <div class="flow-arrow">→<div class="flow-arrow-label">HTTP POST</div></div>
+    <div class="flow-node box-purple">
+      <div class="flow-node-name" style="color:#b09dfa;">API Server</div>
+      <div class="flow-node-desc">Validates JWT, loads session history</div>
+    </div>
+    <div class="flow-arrow">→<div class="flow-arrow-label">fetch context</div></div>
+    <div class="flow-node box-green">
+      <div class="flow-node-name" style="color:#7eddb0;">RAG Builder</div>
+      <div class="flow-node-desc">Retrieves problem + misconceptions</div>
+    </div>
+    <div class="flow-arrow">→<div class="flow-arrow-label">Anthropic SDK</div></div>
+    <div class="flow-node box-teal">
+      <div class="flow-node-name" style="color:#7addd4;">Claude API</div>
+      <div class="flow-node-desc">Socratic system prompt + full history</div>
+    </div>
+    <div class="flow-arrow">→<div class="flow-arrow-label">SSE stream</div></div>
+    <div class="flow-node box-amber">
+      <div class="flow-node-name" style="color:#f5c97a;">Tool Check</div>
+      <div class="flow-node-desc">Geometry trigger? Hint level?</div>
+    </div>
+    <div class="flow-arrow">→<div class="flow-arrow-label">to client</div></div>
+    <div class="flow-node box-blue">
+      <div class="flow-node-name" style="color:#93bcfc;">Chat UI</div>
+      <div class="flow-node-desc">Streams response + renders 3D if needed</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════ SOCRATIC ENGINE ════════════════════════════════ -->
+<section class="section" id="socratic">
+  <div class="section-head">
+    <div class="section-num">02</div>
+    <div>
+      <div class="section-title">Socratic Engine Spec</div>
+      <div class="section-sub">The AI dialogue design — system prompt architecture, state machine, hint escalation, and tool use for the geometry trigger.</div>
+    </div>
+  </div>
+
+  <div class="subhead">Dialogue State Machine</div>
+  <div class="flow-diagram" style="flex-direction:column; gap:16px; padding:28px;">
+    <div style="display:flex; gap:0; align-items:center; width:100%;">
+      <div class="flow-node box-blue" style="flex:1;">
+        <div class="flow-node-name" style="color:#93bcfc;">① REVIEW</div>
+        <div class="flow-node-desc">Restate the problem, ask student what they already know about it</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node box-purple" style="flex:1;">
+        <div class="flow-node-name" style="color:#b09dfa;">② HEURISTIC</div>
+        <div class="flow-node-desc">Ask guiding sub-questions to break problem into tractable steps</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node box-amber" style="flex:1;">
+        <div class="flow-node-name" style="color:#f5c97a;">③ RECTIFY</div>
+        <div class="flow-node-desc">Student makes error → AI identifies it without solving → guided back</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node box-green" style="flex:1;">
+        <div class="flow-node-name" style="color:#7eddb0;">④ SUMMARIZE</div>
+        <div class="flow-node-desc">Student solves → AI confirms and generalizes the concept</div>
+      </div>
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);text-align:center;">
+      RECTIFY loops back to HEURISTIC (max 3×) → if still stuck, escalate HINT LEVEL
+    </div>
+  </div>
+
+  <div class="subhead">Hint Escalation System</div>
+  <table class="spec-table">
+    <thead><tr><th>Level</th><th>Trigger</th><th>What the AI does</th><th>Example response</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>L0</code> — Pure Socratic</td>
+        <td>Default state</td>
+        <td>Only asks questions. Never states a fact directly.</td>
+        <td><em>"Góc giữa SA và mặt đáy là gì? Bạn tính nó bằng cách nào?"</em></td>
+      </tr>
+      <tr>
+        <td><code>L1</code> — Guided Hint</td>
+        <td>2+ failed attempts on same step</td>
+        <td>Points to the specific tool or theorem needed, then asks.</td>
+        <td><em>"Hãy nghĩ đến định lý Pythagoras trong tam giác SAH. Bạn xác định được H chưa?"</em></td>
+      </tr>
+      <tr>
+        <td><code>L2</code> — Scaffolded Hint</td>
+        <td>Student requests hint OR 3+ failures</td>
+        <td>Provides first step explicitly. Student must complete remaining.</td>
+        <td><em>"AH = AB/2 = 3cm. Từ đây, bạn tính SA như thế nào?"</em></td>
+      </tr>
+      <tr>
+        <td><code>L3</code> — Full Worked Example</td>
+        <td>Student explicitly types "Mình chịu rồi" or equivalent</td>
+        <td>Shows complete solution. Immediately follows with a similar problem.</td>
+        <td>Full solution shown. <em>"Bây giờ hãy thử bài tương tự này…"</em></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="subhead">System Prompt Architecture</div>
+  <div class="callout callout-amber">
+    <div class="callout-icon">⚠️</div>
+    <div>The system prompt is the most critical engineering artifact in this product. It must enforce Socratic behavior, handle Vietnamese math vocabulary precisely, and trigger the geometry visualizer via Claude's tool use. Draft, test, and iterate on this before building any UI.</div>
+  </div>
+
+  <div class="prompt-box">
+    <div class="prompt-head">
+      <span>system_prompt.txt — Socratic Tutor Core</span>
+      <span style="color:var(--text3);">~800 tokens</span>
+    </div>
+    <div class="prompt-body"><span class="p-section"># VAI TRÒ</span>
+Bạn là gia sư Toán Socratic cho học sinh lớp 12 Việt Nam đang ôn thi THPT.
+Nhiệm vụ của bạn: giúp học sinh <span class="p-rule">TỰ TÌM RA</span> đáp án — không bao giờ đưa ra giải pháp trực tiếp.
+
+<span class="p-section"># NGUYÊN TẮC BẮT BUỘC</span>
+<span class="p-rule">1. KHÔNG BAO GIỜ</span> đưa ra đáp án hoặc lời giải hoàn chỉnh trong một lượt, trừ khi học sinh đã yêu cầu gợi ý L3.
+<span class="p-rule">2. MỌI</span> phản hồi phải chứa ít nhất một câu hỏi dẫn dắt.
+<span class="p-rule">3. Khi học sinh sai</span>: không nói "sai", hỏi "Tại sao em nghĩ [kết quả đó]?"
+<span class="p-rule">4. Ngôn ngữ</span>: Tiếng Việt, thân thiện, kiên nhẫn. Xưng "thầy/cô", gọi học sinh là "em".
+<span class="p-rule">5. Toán học</span>: Viết biểu thức theo LaTeX trong dấu $…$ hoặc $$…$$.
+
+<span class="p-section"># PHÁT HIỆN HÌNH HỌC KHÔNG GIAN</span>
+Nếu bài toán liên quan đến: hình chóp, lăng trụ, hình hộp, hình cầu, hình nón, hình trụ —
+→ <span class="p-rule">GỌI TOOL</span> <span class="p-var">render_geometry</span> với tham số từ đề bài.
+→ Sau khi render, hỏi: "Em nhìn vào hình 3D, em thấy điểm H nằm ở đâu?"
+
+<span class="p-section"># TRẠNG THÁI DIALOGUE</span>
+Hiện tại: <span class="p-var">{{dialogue_state}}</span> (REVIEW | HEURISTIC | RECTIFY | SUMMARIZE)
+Số lần thất bại ở bước hiện tại: <span class="p-var">{{fail_count}}</span>
+Mức gợi ý hiện tại: <span class="p-var">{{hint_level}}</span> (0 | 1 | 2 | 3)
+
+<span class="p-section"># NGỮ CẢNH BÀI TOÁN</span>
+Chủ đề: <span class="p-var">{{topic}}</span>
+Đề bài: <span class="p-var">{{problem_statement}}</span>
+Lỗi phổ biến cần để ý: <span class="p-var">{{misconceptions}}</span>
+
+<span class="p-section"># CẤU TRÚC PHẢN HỒI</span>
+<span class="p-example">Tốt:</span> "Em tính được chiều cao AH = 3cm rồi. Từ đó, em dùng định lý nào để tìm SA?"
+<span class="p-example">Tránh:</span> "Áp dụng Pythagoras: SA² = SH² + AH² = 16 + 9 = 25, vậy SA = 5cm."</div>
+  </div>
+
+  <div class="subhead">Claude Tool Use — Geometry Trigger</div>
+  <div class="code-block">
+    <div class="code-block-head">
+      <span class="code-block-title">geometry_tool_spec.py</span>
+      <span class="code-block-lang">PYTHON</span>
+    </div>
+    <pre><span class="c-cm"># Tool definition sent to Claude API alongside system prompt</span>
+<span class="c-var">GEOMETRY_TOOL</span> = {
+    <span class="c-str">"name"</span>: <span class="c-str">"render_geometry"</span>,
+    <span class="c-str">"description"</span>: <span class="c-str">"Renders an interactive 3D geometry figure for the student. "</span>
+                   <span class="c-str">"Call this whenever the problem involves 3D solids."</span>,
+    <span class="c-str">"input_schema"</span>: {
+        <span class="c-str">"type"</span>: <span class="c-str">"object"</span>,
+        <span class="c-str">"required"</span>: [<span class="c-str">"solid_type"</span>, <span class="c-str">"params"</span>],
+        <span class="c-str">"properties"</span>: {
+            <span class="c-str">"solid_type"</span>: {
+                <span class="c-str">"type"</span>: <span class="c-str">"string"</span>,
+                <span class="c-str">"enum"</span>: [<span class="c-str">"pyramid"</span>, <span class="c-str">"prism"</span>, <span class="c-str">"cone"</span>,
+                         <span class="c-str">"sphere"</span>, <span class="c-str">"cylinder"</span>, <span class="c-str">"composite"</span>]
+            },
+            <span class="c-str">"params"</span>: {
+                <span class="c-str">"type"</span>: <span class="c-str">"object"</span>,
+                <span class="c-str">"description"</span>: <span class="c-str">"Geometric parameters: base dimensions, height, "</span>
+                               <span class="c-str">"vertex labels (A,B,C…), apex label (S), "</span>
+                               <span class="c-str">"special points to highlight (foot of altitude H, etc)"</span>
+            },
+            <span class="c-str">"highlight_elements"</span>: {
+                <span class="c-str">"type"</span>: <span class="c-str">"array"</span>,
+                <span class="c-str">"description"</span>: <span class="c-str">"List of edges/faces/points to highlight"</span>,
+                <span class="c-str">"items"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"string"</span>}
+            },
+            <span class="c-str">"show_altitude"</span>: {
+                <span class="c-str">"type"</span>: <span class="c-str">"boolean"</span>,
+                <span class="c-str">"description"</span>: <span class="c-str">"Whether to draw the altitude from apex to base"</span>
+            }
+        }
+    }
+}</pre>
+  </div>
+</section>
+
+<!-- ════════════════════════════════ API SPEC ════════════════════════════════ -->
+<section class="section" id="api">
+  <div class="section-head">
+    <div class="section-num">03</div>
+    <div>
+      <div class="section-title">API Specification</div>
+      <div class="section-sub">All backend endpoints — request parameters, response shape, and auth requirements.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <div class="callout-icon">🔐</div>
+    <div>All endpoints except <code>POST /auth/*</code> require a valid JWT in the <code>Authorization: Bearer &lt;token&gt;</code> header. Admin-only endpoints additionally check <code>role === "admin"</code> from the token payload.</div>
+  </div>
+
+  <!-- Sessions -->
+  <div class="subhead">Session Endpoints</div>
+
+  <div class="endpoint-block">
+    <div class="endpoint-head">
+      <div class="method-badge mb-post">POST</div>
+      <div class="endpoint-path">/api/sessions</div>
+      <div class="endpoint-summary">Start a new Socratic session</div>
+    </div>
+    <div class="endpoint-body">
+      <div class="endpoint-section-lbl">Request Body</div>
+      <div class="param-row"><span class="param-name">topic_id</span><span class="param-type">string</span><span class="param-req">required</span><span class="param-desc">Curriculum node ID e.g. <code>hinh-hoc.hinh-chop</code></span></div>
+      <div class="param-row"><span class="param-name">problem_id</span><span class="param-type">uuid</span><span class="param-opt">optional</span><span class="param-desc">If provided, session starts from a specific problem; otherwise free-ask mode</span></div>
+      <div class="param-row"><span class="param-name">initial_message</span><span class="param-type">string</span><span class="param-opt">optional</span><span class="param-desc">Student's opening question or problem description</span></div>
+      <div class="endpoint-section-lbl">Response <code>201</code></div>
+      <div class="param-row"><span class="param-name">session_id</span><span class="param-type">uuid</span><span class="param-opt"></span><span class="param-desc">New session ID for all subsequent calls</span></div>
+      <div class="param-row"><span class="param-name">first_message</span><span class="param-type">string</span><span class="param-opt"></span><span class="param-desc">AI's opening Socratic question (streamed if <code>stream=true</code>)</span></div>
+      <div class="param-row"><span class="param-name">geometry_params</span><span class="param-type">object|null</span><span class="param-opt"></span><span class="param-desc">3D model params if problem is geometry type; null otherwise</span></div>
+    </div>
+  </div>
+
+  <div class="endpoint-block">
+    <div class="endpoint-head">
+      <div class="method-badge mb-post">POST</div>
+      <div class="endpoint-path">/api/sessions/:id/message</div>
+      <div class="endpoint-summary">Send a student message and receive streamed AI response</div>
+    </div>
+    <div class="endpoint-body">
+      <div class="endpoint-section-lbl">Request Body</div>
+      <div class="param-row"><span class="param-name">content</span><span class="param-type">string</span><span class="param-req">required</span><span class="param-desc">Student's message text</span></div>
+      <div class="param-row"><span class="param-name">hint_requested</span><span class="param-type">boolean</span><span class="param-opt">optional</span><span class="param-desc">True if student clicked the hint button — advances hint level</span></div>
+      <div class="endpoint-section-lbl">Response — Server-Sent Events stream</div>
+      <div class="param-row"><span class="param-name">event: delta</span><span class="param-type">string</span><span class="param-opt"></span><span class="param-desc">Streamed text chunk from Claude</span></div>
+      <div class="param-row"><span class="param-name">event: tool_use</span><span class="param-type">object</span><span class="param-opt"></span><span class="param-desc">Geometry render trigger with <code>solid_type</code> and <code>params</code></span></div>
+      <div class="param-row"><span class="param-name">event: done</span><span class="param-type">object</span><span class="param-opt"></span><span class="param-desc">Final message metadata: <code>dialogue_state</code>, <code>hint_level</code>, <code>tokens_used</code></span></div>
+    </div>
+  </div>
+
+  <div class="endpoint-block">
+    <div class="endpoint-head">
+      <div class="method-badge mb-get">GET</div>
+      <div class="endpoint-path">/api/sessions/:id</div>
+      <div class="endpoint-summary">Retrieve full session history and current state</div>
+    </div>
+    <div class="endpoint-body">
+      <div class="endpoint-section-lbl">Response <code>200</code></div>
+      <div class="param-row"><span class="param-name">session</span><span class="param-type">object</span><span class="param-opt"></span><span class="param-desc"><code>id</code>, <code>topic_id</code>, <code>status</code>, <code>dialogue_state</code>, <code>hint_level</code>, <code>hint_count</code></span></div>
+      <div class="param-row"><span class="param-name">messages</span><span class="param-type">array</span><span class="param-opt"></span><span class="param-desc">Array of <code>{role, content, timestamp, tool_calls?}</code></span></div>
+      <div class="param-row"><span class="param-name">problem</span><span class="param-type">object|null</span><span class="param-opt"></span><span class="param-desc">Full problem object if session is problem-linked</span></div>
+    </div>
+  </div>
+
+  <div class="endpoint-block">
+    <div class="endpoint-head">
+      <div class="method-badge mb-put">PUT</div>
+      <div class="endpoint-path">/api/sessions/:id/complete</div>
+      <div class="endpoint-summary">Mark session complete — updates mastery score and progress</div>
+    </div>
+    <div class="endpoint-body">
+      <div class="endpoint-section-lbl">Request Body</div>
+      <div class="param-row"><span class="param-name">student_rating</span><span class="param-type">int 1–5</span><span class="param-opt">optional</span><span class="param-desc">Self-rated understanding after session</span></div>
+      <div class="endpoint-section-lbl">Response <code>200</code></div>
+      <div class="param-row"><span class="param-name">summary</span><span class="param-type">string</span><span class="param-opt"></span><span class="param-desc">AI-generated session summary (concept covered, breakthrough moment)</span></div>
+      <div class="param-row"><span class="param-name">mastery_delta</span><span class="param-type">float</span><span class="param-opt"></span><span class="param-desc">Change in mastery score for this topic</span></div>
+      <div class="param-row"><span class="param-name">next_suggested_topic</span><span class="param-type">string</span><span class="param-opt"></span><span class="param-desc">AI-suggested next topic based on session performance</span></div>
+    </div>
+  </div>
+
+  <!-- Problems -->
+  <div class="subhead">Problem Endpoints</div>
+
+  <div class="endpoint-block">
+    <div class="endpoint-head">
+      <div class="method-badge mb-get">GET</div>
+      <div class="endpoint-path">/api/problems</div>
+      <div class="endpoint-summary">Fetch problems filtered by topic, difficulty, and type</div>
+    </div>
+    <div class="endpoint-body">
+      <div class="endpoint-section-lbl">Query Parameters</div>
+      <div class="param-row"><span class="param-name">topic_id</span><span class="param-type">string</span><span class="param-opt">optional</span><span class="param-desc">Curriculum node e.g. <code>giai-tich.dao-ham</code></span></div>
+      <div class="param-row"><span class="param-name">difficulty</span><span class="param-type">enum</span><span class="param-opt">optional</span><span class="param-desc"><code>easy</code> | <code>medium</code> | <code>hard</code></span></div>
+      <div class="param-row"><span class="param-name">is_geometry</span><span class="param-type">boolean</span><span class="param-opt">optional</span><span class="param-desc">Filter to problems with 3D geometry component</span></div>
+      <div class="param-row"><span class="param-name">limit</span><span class="param-type">int</span><span class="param-opt">optional</span><span class="param-desc">Default 20, max 100</span></div>
+    </div>
+  </div>
+
+  <div class="endpoint-block">
+    <div class="endpoint-head">
+      <div class="method-badge mb-get">GET</div>
+      <div class="endpoint-path">/api/problems/:id/geometry</div>
+      <div class="endpoint-summary">Get 3D model parameters for a geometry problem</div>
+    </div>
+    <div class="endpoint-body">
+      <div class="endpoint-section-lbl">Response <code>200</code></div>
+      <div class="param-row"><span class="param-name">solid_type</span><span class="param-type">string</span><span class="param-opt"></span><span class="param-desc">One of pyramid, prism, cone, sphere, cylinder, composite</span></div>
+      <div class="param-row"><span class="param-name">params</span><span class="param-type">object</span><span class="param-opt"></span><span class="param-desc">All dimensional parameters needed for Three.js renderer</span></div>
+      <div class="param-row"><span class="param-name">labels</span><span class="param-type">object</span><span class="param-opt"></span><span class="param-desc">Vertex/edge label map e.g. <code>{"apex": "S", "base": ["A","B","C","D"]}</code></span></div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="subhead">Progress & Analytics Endpoints</div>
+
+  <div class="endpoint-block">
+    <div class="endpoint-head">
+      <div class="method-badge mb-get">GET</div>
+      <div class="endpoint-path">/api/progress/me</div>
+      <div class="endpoint-summary">Get authenticated student's full mastery map</div>
+    </div>
+    <div class="endpoint-body">
+      <div class="endpoint-section-lbl">Response <code>200</code></div>
+      <div class="param-row"><span class="param-name">mastery_by_topic</span><span class="param-type">object</span><span class="param-opt"></span><span class="param-desc">Map of topic_id → mastery score 0.0–1.0</span></div>
+      <div class="param-row"><span class="param-name">sessions_this_week</span><span class="param-type">int</span><span class="param-opt"></span><span class="param-desc">Activity count for weekly chart</span></div>
+      <div class="param-row"><span class="param-name">suggested_topics</span><span class="param-type">array</span><span class="param-opt"></span><span class="param-desc">Top 3 topics recommended for next study (lowest mastery + most overdue)</span></div>
+      <div class="param-row"><span class="param-name">streak_days</span><span class="param-type">int</span><span class="param-opt"></span><span class="param-desc">Consecutive days with at least one completed session</span></div>
+    </div>
+  </div>
+
+  <div class="endpoint-block">
+    <div class="endpoint-head">
+      <div class="method-badge mb-get">GET</div>
+      <div class="endpoint-path">/api/admin/stats</div>
+      <div class="endpoint-summary">Admin: platform-wide analytics (admin role required)</div>
+    </div>
+    <div class="endpoint-body">
+      <div class="endpoint-section-lbl">Response <code>200</code></div>
+      <div class="param-row"><span class="param-name">daily_active_users</span><span class="param-type">array</span><span class="param-opt"></span><span class="param-desc">DAU time series for the past 30 days</span></div>
+      <div class="param-row"><span class="param-name">avg_session_duration_min</span><span class="param-type">float</span><span class="param-opt"></span><span class="param-desc">Average session length in minutes</span></div>
+      <div class="param-row"><span class="param-name">top_error_topics</span><span class="param-type">array</span><span class="param-opt"></span><span class="param-desc">Topics with highest hint request rates</span></div>
+      <div class="param-row"><span class="param-name">geometry_viewer_usage_pct</span><span class="param-type">float</span><span class="param-opt"></span><span class="param-desc">% of geometry sessions where 3D viewer was triggered</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════ 3D VISUALIZER ════════════════════════════════ -->
+<section class="section" id="3d">
+  <div class="section-head">
+    <div class="section-num">04</div>
+    <div>
+      <div class="section-title">3D Geometry Visualizer Spec</div>
+      <div class="section-sub">Implementation plan for the Three.js-powered interactive geometry viewer — the platform's strongest differentiator.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <div class="callout-icon">💡</div>
+    <div>All 3D models are <strong>procedurally generated</strong> from JSON parameters — not static assets. This means any problem with numeric dimensions renders the correct, custom-scaled model automatically. No manual 3D modelling required.</div>
+  </div>
+
+  <div class="subhead">Supported Geometry Types — MVP</div>
+  <div class="geo-grid">
+    <div class="geo-card">
+      <div class="geo-card-title">🔺 Pyramid (Hình chóp)</div>
+      <div class="geo-card-params">solid_type: "pyramid"<br>base_shape: square|rect|triangle|regular_n<br>base_side: number (cm)<br>height: number (cm)<br>apex_label: string<br>base_labels: string[]<br>show_altitude: boolean<br>altitude_foot_label: string</div>
+    </div>
+    <div class="geo-card">
+      <div class="geo-card-title">⬡ Prism (Lăng trụ)</div>
+      <div class="geo-card-params">solid_type: "prism"<br>base_shape: triangle|square|rect|regular_n<br>base_side: number<br>height: number<br>top_labels: string[]<br>bottom_labels: string[]<br>diagonal: boolean</div>
+    </div>
+    <div class="geo-card">
+      <div class="geo-card-title">🔵 Sphere (Hình cầu)</div>
+      <div class="geo-card-params">solid_type: "sphere"<br>radius: number<br>center_label: string<br>show_great_circle: boolean<br>show_cross_section: boolean<br>cross_section_height: number</div>
+    </div>
+    <div class="geo-card">
+      <div class="geo-card-title">🔶 Cone (Hình nón)</div>
+      <div class="geo-card-params">solid_type: "cone"<br>base_radius: number<br>height: number<br>apex_label: string<br>center_label: string<br>show_slant_height: boolean<br>show_altitude: boolean</div>
+    </div>
+    <div class="geo-card">
+      <div class="geo-card-title">⬜ Cuboid / Box (Hình hộp)</div>
+      <div class="geo-card-params">solid_type: "cuboid"<br>width: number<br>depth: number<br>height: number<br>vertex_labels: string[] (8 vertices)<br>show_space_diagonal: boolean<br>highlight_face: string</div>
+    </div>
+    <div class="geo-card">
+      <div class="geo-card-title">🔗 Composite (Tổ hợp)</div>
+      <div class="geo-card-params">solid_type: "composite"<br>components: SolidSpec[]<br>Each component has:<br>  type + params + offset: {x,y,z}<br>Enables pyramid-on-prism etc.</div>
+    </div>
+  </div>
+
+  <div class="subhead">Viewer Component Features</div>
+  <table class="spec-table">
+    <thead><tr><th>Feature</th><th>Implementation</th><th>Sprint</th></tr></thead>
+    <tbody>
+      <tr><td>Orbit rotation</td><td>Three.js OrbitControls — drag to rotate, scroll to zoom</td><td>Sprint 2</td></tr>
+      <tr><td>Vertex labels</td><td>CSS2DRenderer overlay — labels always face camera</td><td>Sprint 2</td></tr>
+      <tr><td>Edge highlighting</td><td>LineSegments with per-edge color control</td><td>Sprint 2</td></tr>
+      <tr><td>Altitude line</td><td>Dashed line from apex to altitude foot; foot labeled</td><td>Sprint 2</td></tr>
+      <tr><td>Cross-section plane</td><td>Slider control moves a clipping plane through the solid</td><td>Sprint 3</td></tr>
+      <tr><td>Step-by-step construction</td><td>Animated draw sequence — vertices → edges → faces in order</td><td>Sprint 3</td></tr>
+      <tr><td>Measurement overlay</td><td>Toggle to show known dimensions as annotations on edges</td><td>Sprint 3</td></tr>
+      <tr><td>Mobile touch controls</td><td>Pinch-to-zoom, two-finger rotate via HammerJS</td><td>Sprint 4</td></tr>
+    </tbody>
+  </table>
+
+  <div class="subhead">Component API</div>
+  <div class="code-block">
+    <div class="code-block-head">
+      <span class="code-block-title">GeometryViewer.tsx — Component interface</span>
+      <span class="code-block-lang">TYPESCRIPT</span>
+    </div>
+    <pre><span class="c-kw">interface</span> <span class="c-type">GeometryViewerProps</span> {
+  <span class="c-cm">/** JSON params from API or Claude tool_use */</span>
+  solidSpec: <span class="c-type">SolidSpec</span>
+
+  <span class="c-cm">/** Width of viewer canvas (default: fills container) */</span>
+  width?: <span class="c-type">number</span>
+  height?: <span class="c-type">number</span>
+
+  <span class="c-cm">/** Elements to highlight — e.g. ["SA", "SB", "H"] */</span>
+  highlights?: <span class="c-type">string</span>[]
+
+  <span class="c-cm">/** Show construction animation on mount */</span>
+  animated?: <span class="c-type">boolean</span>
+
+  <span class="c-cm">/** Enable cross-section slider */</span>
+  showCrossSection?: <span class="c-type">boolean</span>
+
+  <span class="c-cm">/** Callback when student clicks a vertex/edge */</span>
+  onElementClick?: (label: <span class="c-type">string</span>) => <span class="c-type">void</span>
+}
+
+<span class="c-cm">/** Usage in Chat component */</span>
+<span class="c-fn">function</span> <span class="c-fn">ChatMessage</span>({ message }: <span class="c-type">Props</span>) {
+  <span class="c-kw">if</span> (message.tool_call?.name === <span class="c-str">"render_geometry"</span>) {
+    <span class="c-kw">return</span> (
+      &lt;<span class="c-type">GeometryViewer</span>
+        solidSpec={message.tool_call.input}
+        animated={<span class="c-num">true</span>}
+        height={<span class="c-num">360</span>}
+      /&gt;
+    )
+  }
+  <span class="c-kw">return</span> &lt;<span class="c-type">TextMessage</span> content={message.content} /&gt;
+}</pre>
+  </div>
+</section>
+
+<!-- ════════════════════════════════ DATABASE ════════════════════════════════ -->
+<section class="section" id="db">
+  <div class="section-head">
+    <div class="section-num">05</div>
+    <div>
+      <div class="section-title">Database Schema</div>
+      <div class="section-sub">Full PostgreSQL schema with indexes, relationships, and migration order.</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-block-head">
+      <span class="code-block-title">001_init_schema.sql</span>
+      <span class="code-block-lang">SQL</span>
+    </div>
+    <pre><span class="c-cm">-- Enable extensions</span>
+<span class="c-kw">CREATE EXTENSION IF NOT EXISTS</span> <span class="c-str">"pgcrypto"</span>;
+<span class="c-kw">CREATE EXTENSION IF NOT EXISTS</span> <span class="c-str">"vector"</span>;  <span class="c-cm">-- pgvector</span>
+
+<span class="c-cm">-- Enums</span>
+<span class="c-kw">CREATE TYPE</span> user_role <span class="c-kw">AS ENUM</span> (<span class="c-str">'student'</span>, <span class="c-str">'admin'</span>);
+<span class="c-kw">CREATE TYPE</span> session_status <span class="c-kw">AS ENUM</span> (<span class="c-str">'active'</span>, <span class="c-str">'completed'</span>, <span class="c-str">'abandoned'</span>);
+<span class="c-kw">CREATE TYPE</span> dialogue_state <span class="c-kw">AS ENUM</span> (<span class="c-str">'review'</span>, <span class="c-str">'heuristic'</span>, <span class="c-str">'rectify'</span>, <span class="c-str">'summarize'</span>);
+<span class="c-kw">CREATE TYPE</span> difficulty_level <span class="c-kw">AS ENUM</span> (<span class="c-str">'easy'</span>, <span class="c-str">'medium'</span>, <span class="c-str">'hard'</span>);
+
+<span class="c-cm">-- Users</span>
+<span class="c-kw">CREATE TABLE</span> users (
+  id            UUID <span class="c-kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  email         TEXT <span class="c-kw">NOT NULL UNIQUE</span>,
+  name          TEXT <span class="c-kw">NOT NULL</span>,
+  avatar_url    TEXT,
+  role          user_role <span class="c-kw">NOT NULL DEFAULT</span> <span class="c-str">'student'</span>,
+  created_at    TIMESTAMPTZ <span class="c-kw">DEFAULT NOW</span>(),
+  last_active   TIMESTAMPTZ
+);
+
+<span class="c-cm">-- Problems bank</span>
+<span class="c-kw">CREATE TABLE</span> problems (
+  id               UUID <span class="c-kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  topic_id         TEXT <span class="c-kw">NOT NULL</span>,          <span class="c-cm">-- e.g. "hinh-hoc.hinh-chop"</span>
+  statement_latex  TEXT <span class="c-kw">NOT NULL</span>,          <span class="c-cm">-- KaTeX-formatted problem</span>
+  difficulty       difficulty_level <span class="c-kw">NOT NULL</span>,
+  answer           TEXT <span class="c-kw">NOT NULL</span>,           <span class="c-cm">-- hidden from student</span>
+  is_geometry      BOOLEAN <span class="c-kw">DEFAULT</span> <span class="c-num">FALSE</span>,
+  geometry_params  JSONB,                    <span class="c-cm">-- null if not geometry</span>
+  source           TEXT,                     <span class="c-cm">-- e.g. "THPT 2024"</span>
+  misconceptions   JSONB,                    <span class="c-cm">-- array of common errors</span>
+  embedding        VECTOR(<span class="c-num">1536</span>),            <span class="c-cm">-- for similarity search</span>
+  created_at       TIMESTAMPTZ <span class="c-kw">DEFAULT NOW</span>()
+);
+<span class="c-kw">CREATE INDEX</span> idx_problems_topic <span class="c-kw">ON</span> problems(topic_id);
+<span class="c-kw">CREATE INDEX</span> idx_problems_geo <span class="c-kw">ON</span> problems(is_geometry);
+<span class="c-kw">CREATE INDEX</span> idx_problems_emb <span class="c-kw">ON</span> problems <span class="c-kw">USING</span> ivfflat(embedding vector_cosine_ops);
+
+<span class="c-cm">-- Sessions</span>
+<span class="c-kw">CREATE TABLE</span> sessions (
+  id              UUID <span class="c-kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  user_id         UUID <span class="c-kw">REFERENCES</span> users(id) <span class="c-kw">ON DELETE CASCADE</span>,
+  problem_id      UUID <span class="c-kw">REFERENCES</span> problems(id),  <span class="c-cm">-- nullable</span>
+  topic_id        TEXT <span class="c-kw">NOT NULL</span>,
+  status          session_status <span class="c-kw">DEFAULT</span> <span class="c-str">'active'</span>,
+  dialogue_state  dialogue_state <span class="c-kw">DEFAULT</span> <span class="c-str">'review'</span>,
+  hint_level      SMALLINT <span class="c-kw">DEFAULT</span> <span class="c-num">0</span>,
+  hint_count      SMALLINT <span class="c-kw">DEFAULT</span> <span class="c-num">0</span>,
+  fail_count      SMALLINT <span class="c-kw">DEFAULT</span> <span class="c-num">0</span>,
+  messages        JSONB <span class="c-kw">NOT NULL DEFAULT</span> <span class="c-str">'[]'</span>,
+  summary         TEXT,
+  student_rating  SMALLINT,                        <span class="c-cm">-- 1-5 self-rating</span>
+  started_at      TIMESTAMPTZ <span class="c-kw">DEFAULT NOW</span>(),
+  ended_at        TIMESTAMPTZ
+);
+<span class="c-kw">CREATE INDEX</span> idx_sessions_user <span class="c-kw">ON</span> sessions(user_id, started_at <span class="c-kw">DESC</span>);
+
+<span class="c-cm">-- Progress (one row per user × topic)</span>
+<span class="c-kw">CREATE TABLE</span> progress (
+  user_id         UUID <span class="c-kw">REFERENCES</span> users(id) <span class="c-kw">ON DELETE CASCADE</span>,
+  topic_id        TEXT,
+  mastery_score   FLOAT <span class="c-kw">DEFAULT</span> <span class="c-num">0.0</span>,          <span class="c-cm">-- 0.0 → 1.0</span>
+  sessions_count  INT <span class="c-kw">DEFAULT</span> <span class="c-num">0</span>,
+  last_practiced  TIMESTAMPTZ,
+  <span class="c-kw">PRIMARY KEY</span> (user_id, topic_id)
+);</pre>
+  </div>
+
+  <div class="subhead">Mastery Score Algorithm</div>
+  <div class="code-block">
+    <div class="code-block-head">
+      <span class="code-block-title">mastery.py — Score update logic</span>
+      <span class="code-block-lang">PYTHON</span>
+    </div>
+    <pre><span class="c-kw">def</span> <span class="c-fn">compute_mastery_delta</span>(session: Session) -> <span class="c-type">float</span>:
+    <span class="c-cm">"""
+    Mastery increases on successful completion.
+    Hint usage and fail count penalize the gain.
+    """</span>
+    base_gain = <span class="c-num">0.15</span>  <span class="c-cm"># max gain per completed session</span>
+
+    <span class="c-cm"># Penalty for hints used (each hint = -20% of gain)</span>
+    hint_penalty = session.hint_count * <span class="c-num">0.20</span>
+
+    <span class="c-cm"># Penalty for repeated failures</span>
+    fail_penalty = session.fail_count * <span class="c-num">0.10</span>
+
+    <span class="c-cm"># Student's self-rating bonus (5 stars = no penalty)</span>
+    rating_factor = (session.student_rating / <span class="c-num">5.0</span>) <span class="c-kw">if</span> session.student_rating <span class="c-kw">else</span> <span class="c-num">0.7</span>
+
+    delta = base_gain * rating_factor * (<span class="c-num">1</span> - hint_penalty - fail_penalty)
+    <span class="c-kw">return</span> max(<span class="c-num">0.0</span>, min(delta, base_gain))  <span class="c-cm"># clamp to [0, base_gain]</span>
+
+<span class="c-kw">def</span> <span class="c-fn">update_mastery</span>(user_id: <span class="c-type">str</span>, topic_id: <span class="c-type">str</span>, delta: <span class="c-type">float</span>):
+    <span class="c-cm"># Exponential moving average — prevents instant mastery</span>
+    new_score = min(<span class="c-num">1.0</span>, current_score + delta * (<span class="c-num">1</span> - current_score))</pre>
+  </div>
+</section>
+
+<!-- ════════════════════════════════ FRONTEND ════════════════════════════════ -->
+<section class="section" id="frontend">
+  <div class="section-head">
+    <div class="section-num">06</div>
+    <div>
+      <div class="section-title">Frontend Component Tree</div>
+      <div class="section-sub">Next.js App Router structure, component responsibilities, and state management approach.</div>
+    </div>
+  </div>
+
+  <div class="subhead">App Router Structure</div>
+  <div class="code-block">
+    <div class="code-block-head">
+      <span class="code-block-title">frontend/app/ — Next.js 14 App Router</span>
+      <span class="code-block-lang">STRUCTURE</span>
+    </div>
+    <pre><span class="c-type">app/</span>
+├── <span class="c-fn">layout.tsx</span>               <span class="c-cm"># Root layout: fonts, Sentry, auth provider</span>
+├── <span class="c-fn">page.tsx</span>                 <span class="c-cm"># Landing page (logged out) / redirect to /dashboard</span>
+│
+├── <span class="c-str">(auth)/</span>
+│   ├── <span class="c-fn">login/page.tsx</span>       <span class="c-cm"># Google OAuth button</span>
+│   └── <span class="c-fn">register/page.tsx</span>    <span class="c-cm"># Onboarding (name, class, goals)</span>
+│
+├── <span class="c-str">(student)/</span>
+│   ├── <span class="c-fn">layout.tsx</span>           <span class="c-cm"># Sidebar nav + auth guard</span>
+│   ├── <span class="c-fn">dashboard/page.tsx</span>   <span class="c-cm"># Mastery radar, weekly activity, suggestions</span>
+│   ├── <span class="c-fn">topics/page.tsx</span>      <span class="c-cm"># Topic picker grid</span>
+│   ├── <span class="c-fn">topics/[id]/page.tsx</span> <span class="c-cm"># Chapter view + problem list</span>
+│   ├── <span class="c-fn">session/</span>
+│   │   ├── <span class="c-fn">new/page.tsx</span>     <span class="c-cm"># Session config (topic, difficulty, free-ask)</span>
+│   │   └── <span class="c-fn">[id]/page.tsx</span>   <span class="c-cm"># Active session: Chat + 3D Viewer split</span>
+│   └── <span class="c-fn">history/page.tsx</span>     <span class="c-cm"># Past sessions list + review</span>
+│
+└── <span class="c-str">(admin)/</span>
+    ├── <span class="c-fn">layout.tsx</span>           <span class="c-cm"># Admin nav + role guard</span>
+    └── <span class="c-fn">dashboard/page.tsx</span>   <span class="c-cm"># Platform stats, error patterns, user list</span></pre>
+  </div>
+
+  <div class="subhead">Core Components</div>
+  <table class="spec-table">
+    <thead><tr><th>Component</th><th>Responsibility</th><th>Key deps</th></tr></thead>
+    <tbody>
+      <tr><td><code>ChatPanel</code></td><td>Renders conversation thread. Handles SSE stream, auto-scroll, message types (text, tool_use, latex). Parent of all message types.</td><td>react-katex, useSSE hook</td></tr>
+      <tr><td><code>MessageBubble</code></td><td>Single message — renders text with inline KaTeX, code blocks, or GeometryViewer if tool_call present.</td><td>KaTeX, GeometryViewer</td></tr>
+      <tr><td><code>ChatInput</code></td><td>Text area with hint button, send button, character count. Handles Enter-to-send vs Shift+Enter newline.</td><td>—</td></tr>
+      <tr><td><code>GeometryViewer</code></td><td>Three.js canvas. Accepts SolidSpec JSON. Procedurally generates geometry. OrbitControls, CSS2D labels, edge highlights.</td><td>Three.js, CSS2DRenderer</td></tr>
+      <tr><td><code>ContextPanel</code></td><td>Right sidebar in session view. Shows problem statement (KaTeX), hint level indicator, dialogue phase badge, session timer.</td><td>react-katex</td></tr>
+      <tr><td><code>MasteryRadar</code></td><td>Recharts RadarChart showing 6 topic mastery scores. Clickable — click topic → navigate to it.</td><td>Recharts</td></tr>
+      <tr><td><code>TopicCard</code></td><td>Card in topic picker. Shows topic name, chapter count, user's mastery badge, recommended indicator.</td><td>—</td></tr>
+      <tr><td><code>SessionSummary</code></td><td>Post-session overlay. AI summary text, mastery delta visualization, next topic suggestion, rating input.</td><td>—</td></tr>
+      <tr><td><code>HintButton</code></td><td>Shows current hint level (0–3). On click: confirms hint request, posts to API with <code>hint_requested: true</code>.</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <div class="subhead">State Management</div>
+  <div class="callout callout-blue">
+    <div class="callout-icon">🗂️</div>
+    <div>Use <strong>Zustand</strong> for global state (auth, active session metadata). Use <strong>React Query (TanStack Query)</strong> for all server state (problems, progress, session history). Keep component local state minimal — only UI state like panel width or animation phase.</div>
+  </div>
+
+  <table class="spec-table">
+    <thead><tr><th>State slice</th><th>Store</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td>Auth</td><td>Zustand</td><td><code>user</code>, <code>token</code>, <code>isAuthenticated</code></td></tr>
+      <tr><td>Active session</td><td>Zustand</td><td><code>sessionId</code>, <code>messages[]</code>, <code>dialogueState</code>, <code>hintLevel</code>, <code>isStreaming</code></td></tr>
+      <tr><td>Progress / mastery</td><td>React Query</td><td>Cached from <code>GET /api/progress/me</code></td></tr>
+      <tr><td>Problem list</td><td>React Query</td><td>Cached + paginated from <code>GET /api/problems</code></td></tr>
+      <tr><td>Session history</td><td>React Query</td><td>Cached from <code>GET /api/sessions</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ════════════════════════════════ SPRINT PLAN ════════════════════════════════ -->
+<section class="section" id="sprint">
+  <div class="section-head">
+    <div class="section-num">07</div>
+    <div>
+      <div class="section-title">8-Week Sprint Plan</div>
+      <div class="section-sub">Week-by-week task breakdown. AI pipeline first — no UI work in Sprint 1.</div>
+    </div>
+  </div>
+
+  <div class="timeline">
+
+    <!-- Sprint 1 -->
+    <div class="sprint-block">
+      <div class="sprint-dot dot-blue"></div>
+      <div class="sprint-header">
+        <span class="sprint-tag tag-blue">Sprint 1</span>
+        <span class="sprint-name">Socratic AI Engine</span>
+        <span class="sprint-weeks">Weeks 1–2</span>
+      </div>
+      <div class="week-grid">
+        <div class="week-card">
+          <div class="week-card-head">Week 1 — Foundation <span class="day-range">Days 1–7</span></div>
+          <ul class="week-tasks">
+            <li><span class="task-bullet bullet-blue"></span>Set up FastAPI project + folder structure</li>
+            <li><span class="task-bullet bullet-blue"></span>Configure Claude API client with streaming</li>
+            <li><span class="task-bullet bullet-blue"></span>Write Socratic system prompt v1 (Vietnamese)</li>
+            <li><span class="task-bullet bullet-blue"></span>Implement dialogue state machine (4 states)</li>
+            <li><span class="task-bullet bullet-blue"></span>Build session context builder (problem + history + misconceptions)</li>
+            <li><span class="task-bullet bullet-blue"></span>Create problem bank JSON (first 50 problems)</li>
+            <li><span class="task-bullet bullet-blue"></span>Test 5 full Socratic sessions via curl/Postman</li>
+          </ul>
+        </div>
+        <div class="week-card">
+          <div class="week-card-head">Week 2 — Refinement <span class="day-range">Days 8–14</span></div>
+          <ul class="week-tasks">
+            <li><span class="task-bullet bullet-blue"></span>Implement hint escalation system (L0–L3)</li>
+            <li><span class="task-bullet bullet-blue"></span>Add geometry detection + render_geometry tool spec</li>
+            <li><span class="task-bullet bullet-blue"></span>Set up PostgreSQL + run init migration</li>
+            <li><span class="task-bullet bullet-blue"></span>Implement session CRUD endpoints (without auth)</li>
+            <li><span class="task-bullet bullet-blue"></span>Load misconceptions catalog per topic</li>
+            <li><span class="task-bullet bullet-blue"></span>Prompt iteration — test AI never gives direct answer</li>
+            <li><span class="task-bullet bullet-blue"></span>Expand problem bank to 100 problems</li>
+          </ul>
+        </div>
+      </div>
+      <div class="gate-box">✓ Gate: 10 full Socratic sessions end-to-end via API. AI never reveals full answer in single turn. Dialogue state transitions correctly.</div>
+    </div>
+
+    <!-- Sprint 2 -->
+    <div class="sprint-block">
+      <div class="sprint-dot dot-purple"></div>
+      <div class="sprint-header">
+        <span class="sprint-tag tag-purple">Sprint 2</span>
+        <span class="sprint-name">Core UI + 3D Viewer + Auth</span>
+        <span class="sprint-weeks">Weeks 3–4</span>
+      </div>
+      <div class="week-grid">
+        <div class="week-card">
+          <div class="week-card-head">Week 3 — Scaffold <span class="day-range">Days 15–21</span></div>
+          <ul class="week-tasks">
+            <li><span class="task-bullet bullet-purple"></span>Next.js 14 project init + Tailwind + folder structure</li>
+            <li><span class="task-bullet bullet-purple"></span>Google OAuth via NextAuth.js</li>
+            <li><span class="task-bullet bullet-purple"></span>JWT integration with FastAPI backend</li>
+            <li><span class="task-bullet bullet-purple"></span>Basic ChatPanel + MessageBubble components</li>
+            <li><span class="task-bullet bullet-purple"></span>SSE streaming hook (useSSE)</li>
+            <li><span class="task-bullet bullet-purple"></span>KaTeX inline math rendering in messages</li>
+            <li><span class="task-bullet bullet-purple"></span>Topic picker page + routing</li>
+          </ul>
+        </div>
+        <div class="week-card">
+          <div class="week-card-head">Week 4 — 3D Viewer <span class="day-range">Days 22–28</span></div>
+          <ul class="week-tasks">
+            <li><span class="task-bullet bullet-purple"></span>Three.js setup + OrbitControls + CSS2DRenderer</li>
+            <li><span class="task-bullet bullet-purple"></span>Pyramid renderer (square base, labeled vertices)</li>
+            <li><span class="task-bullet bullet-purple"></span>Prism renderer (triangular + rectangular)</li>
+            <li><span class="task-bullet bullet-purple"></span>Sphere + Cone renderers</li>
+            <li><span class="task-bullet bullet-purple"></span>Integrate GeometryViewer into MessageBubble</li>
+            <li><span class="task-bullet bullet-purple"></span>Session/[id] page: split chat + context panel</li>
+            <li><span class="task-bullet bullet-purple"></span>Session persistence — messages saved to DB</li>
+          </ul>
+        </div>
+      </div>
+      <div class="gate-box">✓ Gate: End-to-end session in browser. Geometry problem triggers 3D viewer automatically. Auth works. Messages persist across refresh.</div>
+    </div>
+
+    <!-- Sprint 3 -->
+    <div class="sprint-block">
+      <div class="sprint-dot dot-green"></div>
+      <div class="sprint-header">
+        <span class="sprint-tag tag-green">Sprint 3</span>
+        <span class="sprint-name">Progress, Roles & Polish</span>
+        <span class="sprint-weeks">Weeks 5–6</span>
+      </div>
+      <div class="week-grid">
+        <div class="week-card">
+          <div class="week-card-head">Week 5 — Progress Layer <span class="day-range">Days 29–35</span></div>
+          <ul class="week-tasks">
+            <li><span class="task-bullet bullet-green"></span>Mastery score computation + DB update on session complete</li>
+            <li><span class="task-bullet bullet-green"></span>Progress API endpoints (GET /api/progress/me)</li>
+            <li><span class="task-bullet bullet-green"></span>Student dashboard: mastery radar chart (Recharts)</li>
+            <li><span class="task-bullet bullet-green"></span>Weekly activity chart on dashboard</li>
+            <li><span class="task-bullet bullet-green"></span>Session summary overlay (post-session)</li>
+            <li><span class="task-bullet bullet-green"></span>Next topic suggestion logic</li>
+            <li><span class="task-bullet bullet-green"></span>Session history page</li>
+          </ul>
+        </div>
+        <div class="week-card">
+          <div class="week-card-head">Week 6 — Admin + 3D Features <span class="day-range">Days 36–42</span></div>
+          <ul class="week-tasks">
+            <li><span class="task-bullet bullet-green"></span>Admin role + route guard</li>
+            <li><span class="task-bullet bullet-green"></span>Admin dashboard: DAU chart, top errors, viewer usage</li>
+            <li><span class="task-bullet bullet-green"></span>Cross-section slider on 3D viewer</li>
+            <li><span class="task-bullet bullet-green"></span>Step-by-step construction animation</li>
+            <li><span class="task-bullet bullet-green"></span>Measurement overlay on 3D edges</li>
+            <li><span class="task-bullet bullet-green"></span>Hint button + hint level indicator in chat</li>
+            <li><span class="task-bullet bullet-green"></span>Mobile responsive layout pass (chat + viewer)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="gate-box">✓ Gate: Both roles work. Mastery scores update after each session. Admin can see platform stats. 3D viewer works on mobile browser.</div>
+    </div>
+
+    <!-- Sprint 4 -->
+    <div class="sprint-block">
+      <div class="sprint-dot dot-amber"></div>
+      <div class="sprint-header">
+        <span class="sprint-tag tag-amber">Sprint 4</span>
+        <span class="sprint-name">Polish, Pilot & Launch Prep</span>
+        <span class="sprint-weeks">Weeks 7–8</span>
+      </div>
+      <div class="week-grid">
+        <div class="week-card">
+          <div class="week-card-head">Week 7 — Pilot Launch <span class="day-range">Days 43–49</span></div>
+          <ul class="week-tasks">
+            <li><span class="task-bullet bullet-amber"></span>Deploy frontend to Vercel</li>
+            <li><span class="task-bullet bullet-amber"></span>Deploy backend + DB to Railway</li>
+            <li><span class="task-bullet bullet-amber"></span>Configure Sentry on frontend + backend</li>
+            <li><span class="task-bullet bullet-amber"></span>Set up GitHub Actions CI (lint + test on PR)</li>
+            <li><span class="task-bullet bullet-amber"></span>Recruit 10–15 Grade 12 pilot students</li>
+            <li><span class="task-bullet bullet-amber"></span>Onboard pilots — collect first session feedback</li>
+            <li><span class="task-bullet bullet-amber"></span>Expand problem bank to 200+ problems</li>
+          </ul>
+        </div>
+        <div class="week-card">
+          <div class="week-card-head">Week 8 — Fix & Demo Prep <span class="day-range">Days 50–56</span></div>
+          <ul class="week-tasks">
+            <li><span class="task-bullet bullet-amber"></span>Fix top issues from pilot feedback</li>
+            <li><span class="task-bullet bullet-amber"></span>Error state handling (API failures, empty states)</li>
+            <li><span class="task-bullet bullet-amber"></span>Loading skeletons + optimistic UI</li>
+            <li><span class="task-bullet bullet-amber"></span>Performance: lazy-load 3D viewer, split bundle</li>
+            <li><span class="task-bullet bullet-amber"></span>Write README + setup + deploy guide</li>
+            <li><span class="task-bullet bullet-amber"></span>Clean Git history + remove debug logs</li>
+            <li><span class="task-bullet bullet-amber"></span>Demo dry-run on production URL</li>
+          </ul>
+        </div>
+      </div>
+      <div class="gate-box">✓ Gate: 10+ pilot students have completed sessions. Return rate &gt; 40%. Demo works live on production URL without any localhost dependency.</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════ ENV & TESTING ════════════════════════════════ -->
+<section class="section" id="env">
+  <div class="section-head">
+    <div class="section-num">08</div>
+    <div>
+      <div class="section-title">Environment & Testing</div>
+      <div class="section-sub">All environment variables, testing strategy, and CI/CD pipeline.</div>
+    </div>
+  </div>
+
+  <div class="subhead">Environment Variables</div>
+  <div class="env-table">
+    <div class="env-row"><div class="env-key">ANTHROPIC_API_KEY</div><div class="env-val">sk-ant-... (backend only, never exposed to client)</div></div>
+    <div class="env-row"><div class="env-key">DATABASE_URL</div><div class="env-val">postgresql+asyncpg://user:pass@host:5432/toansc</div></div>
+    <div class="env-row"><div class="env-key">REDIS_URL</div><div class="env-val">redis://default:pass@host:6379</div></div>
+    <div class="env-row"><div class="env-key">JWT_SECRET</div><div class="env-val">64+ char random string (generate with openssl rand -hex 32)</div></div>
+    <div class="env-row"><div class="env-key">GOOGLE_CLIENT_ID</div><div class="env-val">OAuth 2.0 client ID from Google Cloud Console</div></div>
+    <div class="env-row"><div class="env-key">GOOGLE_CLIENT_SECRET</div><div class="env-val">OAuth 2.0 secret (backend only)</div></div>
+    <div class="env-row"><div class="env-key">NEXTAUTH_SECRET</div><div class="env-val">Random 32+ char string for NextAuth session encryption</div></div>
+    <div class="env-row"><div class="env-key">NEXTAUTH_URL</div><div class="env-val">https://toan-socratic.vercel.app (production URL)</div></div>
+    <div class="env-row"><div class="env-key">NEXT_PUBLIC_API_URL</div><div class="env-val">https://api.toan-socratic.railway.app</div></div>
+    <div class="env-row"><div class="env-key">SENTRY_DSN</div><div class="env-val">From Sentry project settings (both frontend + backend)</div></div>
+    <div class="env-row"><div class="env-key">R2_ACCOUNT_ID</div><div class="env-val">Cloudflare R2 for asset storage</div></div>
+    <div class="env-row"><div class="env-key">R2_ACCESS_KEY_ID / SECRET</div><div class="env-val">R2 API credentials</div></div>
+  </div>
+
+  <div class="subhead">Testing Strategy</div>
+  <div class="test-grid">
+    <div class="test-card">
+      <div class="test-title">🧪 Backend Unit Tests</div>
+      <ul class="test-items">
+        <li>Mastery score computation algorithm</li>
+        <li>Dialogue state machine transitions</li>
+        <li>Hint level escalation logic</li>
+        <li>Problem bank JSON schema validation</li>
+        <li>JWT auth middleware</li>
+        <li>Geometry params serialization</li>
+      </ul>
+    </div>
+    <div class="test-card">
+      <div class="test-title">🤖 AI Behavior Tests</div>
+      <ul class="test-items">
+        <li>AI does not reveal full answer in first turn</li>
+        <li>Vietnamese language consistency</li>
+        <li>Geometry tool triggered on 3D problems</li>
+        <li>Hint level respected in prompt injection</li>
+        <li>LaTeX syntax correct in AI responses</li>
+        <li>L3 hint shows complete solution</li>
+      </ul>
+    </div>
+    <div class="test-card">
+      <div class="test-title">🖥️ Frontend Component Tests</div>
+      <ul class="test-items">
+        <li>ChatPanel renders streamed messages correctly</li>
+        <li>GeometryViewer loads for all 6 solid types</li>
+        <li>KaTeX renders inline math without errors</li>
+        <li>Auth redirect on unauthenticated access</li>
+        <li>Session summary triggers on completion</li>
+        <li>Hint button advances level correctly</li>
+      </ul>
+    </div>
+    <div class="test-card">
+      <div class="test-title">🌐 E2E Tests (Playwright)</div>
+      <ul class="test-items">
+        <li>Full session flow: login → topic → session → complete</li>
+        <li>Geometry session: 3D viewer renders and rotates</li>
+        <li>Hint escalation: 3 requests reach L3</li>
+        <li>Dashboard mastery updates post-session</li>
+        <li>Admin can view stats (student cannot)</li>
+        <li>Mobile viewport: chat + viewer usable</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="subhead">CI/CD Pipeline</div>
+  <div class="code-block">
+    <div class="code-block-head">
+      <span class="code-block-title">.github/workflows/ci.yml</span>
+      <span class="code-block-lang">YAML</span>
+    </div>
+    <pre><span class="c-kw">on</span>: [push, pull_request]
+
+<span class="c-kw">jobs</span>:
+  <span class="c-fn">backend</span>:
+    <span class="c-kw">runs-on</span>: ubuntu-latest
+    <span class="c-kw">steps</span>:
+      - <span class="c-kw">uses</span>: actions/checkout@v4
+      - <span class="c-kw">run</span>: pip install -r requirements.txt
+      - <span class="c-kw">run</span>: ruff check .          <span class="c-cm"># lint</span>
+      - <span class="c-kw">run</span>: pytest tests/ -v       <span class="c-cm"># unit tests</span>
+
+  <span class="c-fn">frontend</span>:
+    <span class="c-kw">runs-on</span>: ubuntu-latest
+    <span class="c-kw">steps</span>:
+      - <span class="c-kw">uses</span>: actions/checkout@v4
+      - <span class="c-kw">run</span>: npm ci
+      - <span class="c-kw">run</span>: npm run lint        <span class="c-cm"># ESLint</span>
+      - <span class="c-kw">run</span>: npm run type-check   <span class="c-cm"># TypeScript</span>
+      - <span class="c-kw">run</span>: npm run test         <span class="c-cm"># Vitest component tests</span>
+
+  <span class="c-fn">deploy</span>:
+    <span class="c-kw">if</span>: github.ref == 'refs/heads/main'
+    <span class="c-kw">needs</span>: [backend, frontend]
+    <span class="c-kw">steps</span>:
+      - <span class="c-cm"># Vercel deploys automatically on push to main</span>
+      - <span class="c-cm"># Railway deploys automatically via GitHub integration</span>
+      - <span class="c-kw">run</span>: echo "✅ All checks passed — auto-deploying"</pre>
+  </div>
+</section>
+
+</div><!-- /page -->
+
+<footer style="background:var(--bg2);border-top:1px solid var(--border);padding:32px 64px;display:flex;justify-content:space-between;align-items:center;">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);">Toán Socratic · Implementation Spec v1.0</div>
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3);">8 weeks · 4 sprints · Next.js + FastAPI + Claude + Three.js</div>
+</footer>
+
+</body>
+</html>
