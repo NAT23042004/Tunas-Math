@@ -29,6 +29,7 @@ async def create_session(
     """Create a new Socratic session"""
     # Create new session
     new_session = Session(
+        user_id=session_data.user_id,
         topic_id=session_data.topic_id,
         problem_id=session_data.problem_id,
         status=SessionStatus.ACTIVE,

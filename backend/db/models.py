@@ -1,11 +1,11 @@
 from sqlalchemy import Column, String, Boolean, Integer, Float, DateTime, ForeignKey, Enum as SQLEnum, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from pgvector.sqlalchemy import Vector
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 import enum
+
+from db.compatibility import UUID, JSONB, Vector
 
 
 Base = declarative_base()
@@ -38,7 +38,7 @@ class DifficultyLevel(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, nullable=False, index=True)
     name = Column(String, nullable=False)
     avatar_url = Column(String, nullable=True)
@@ -54,7 +54,7 @@ class User(Base):
 class Problem(Base):
     __tablename__ = "problems"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     topic_id = Column(String, nullable=False, index=True)
     statement_latex = Column(Text, nullable=False)
     difficulty = Column(SQLEnum(DifficultyLevel), nullable=False)
@@ -63,7 +63,7 @@ class Problem(Base):
     geometry_params = Column(JSONB, nullable=True)
     source = Column(String, nullable=True)
     misconceptions = Column(JSONB, nullable=True)
-    embedding = Column(Vector(1536), nullable=True)
+    embedding = Column(Vector, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -73,7 +73,7 @@ class Problem(Base):
 class Session(Base):
     __tablename__ = "sessions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     problem_id = Column(UUID(as_uuid=True), ForeignKey("problems.id"), nullable=True)
     topic_id = Column(String, nullable=False)

@@ -75,6 +75,7 @@ class ProblemResponse(ProblemBase):
 
 # Session Schemas
 class SessionCreate(BaseModel):
+    user_id: UUID
     topic_id: str
     problem_id: Optional[UUID] = None
     initial_message: Optional[str] = None
