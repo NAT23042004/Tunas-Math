@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { Message } from "./Message";
 import { LoadingDots } from "./LoadingDots";
 import { GeometryViewer } from "./GeometryViewer";
+import { createSession, getProblems, sendMessageStream } from "../lib/api";
 
 interface MessageType {
   role: "user" | "assistant";
@@ -22,9 +24,11 @@ interface Problem {
   answer: string;
   is_geometry: boolean;
   geometry_params?: any;
+  id?: string;
 }
 
 export function ChatInterface() {
+  const { data: session, status } = useSession();
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -34,41 +38,32 @@ export function ChatInterface() {
   const [problem, setProblem] = useState<Problem | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  const token = session?.user ? (session as any).accessToken : undefined;
+
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Mock problem with geometry for demo
-  useEffect(() => {
-    if (!problem) {
-      setProblem({
-        statement_latex: "Cho hình chóp S.ABCD có đáy ABCD là hình vuông cạnh 4 cm. Cạnh SA vuông góc với mặt đáy, SA = 6 cm.",
-        answer: "V = 32 cm³",
-        is_geometry: true,
-        geometry_params: {
-          solid_type: "pyramid",
-          params: { base_shape: "square", base_side: 4, height: 6 }
-        }
-      });
-    }
-  }, []);
-
   // Initialize session
   useEffect(() => {
+    if (status === "loading") return;
+    if (status === "unauthenticated") {
+      window.location.href = "/login";
+      return;
+    }
+    if (!session?.user?.id) return;
+
     const initSession = async () => {
       try {
-        const response = await fetch("/api/sessions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id: "00000000-0000-0000-0000-000000000001",
+        const data = await createSession(
+          {
+            user_id: session.user.id,
             topic_id: "hinh-hoc.hinh-chop",
-            problem_id: null,
-          }),
-        });
-        if (!response.ok) throw new Error("Failed to create session");
-        const data = await response.json();
+            problem_id: undefined,
+          },
+          token
+        );
         setSessionId(data.id);
         setSessionState({
           dialogue_state: data.dialogue_state,
@@ -77,20 +72,20 @@ export function ChatInterface() {
         });
 
         // Fetch a sample problem
-        const problemResponse = await fetch("/api/problems?topic_id=hinh-hoc.hinh-chop&limit=1");
-        if (problemResponse.ok) {
-          const problems = await problemResponse.json();
-          if (problems.length > 0) {
-            setProblem(problems[0]);
-          }
+        const problems = await getProblems(
+          { topic_id: "hinh-hoc.hinh-chop", limit: 1 },
+          token
+        );
+        if (problems.length > 0) {
+          setProblem(problems[0]);
         }
-      } catch (err) {
-        setError("Failed to initialize session");
+      } catch (err: any) {
+        setError(err.message || "Failed to initialize session");
         console.error(err);
       }
     };
     initSession();
-  }, []);
+  }, [session?.user?.id, status]);
 
   const sendMessage = async () => {
     if (!input.trim() || !sessionId || isLoading) return;
@@ -106,32 +101,48 @@ export function ChatInterface() {
     setIsLoading(true);
     setError(null);
 
+    // Add placeholder for assistant message
+    const assistantMessage: MessageType = {
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, assistantMessage]);
+
     try {
-      const response = await fetch(`/api/sessions/${sessionId}/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await sendMessageStream(
+        sessionId,
+        {
           content: input,
           hint_requested: false,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to send message");
-
-      const data = await response.json();
-
-      const assistantMessage: MessageType = {
-        role: "assistant",
-        content: data.message.content,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setSessionState(data.session_state);
-    } catch (err) {
-      setError("Failed to send message");
+        },
+        token,
+        (content, done, sessionState) => {
+          if (content) {
+            // Update the last message with new content
+            setMessages((prev) => {
+              const updated = [...prev];
+              const lastMsg = updated[updated.length - 1];
+              if (lastMsg && lastMsg.role === "assistant") {
+                updated[updated.length - 1] = {
+                  ...lastMsg,
+                  content: lastMsg.content + content,
+                };
+              }
+              return updated;
+            });
+          }
+          if (done) {
+            setIsLoading(false);
+            if (sessionState) {
+              setSessionState(sessionState);
+            }
+          }
+        }
+      );
+    } catch (err: any) {
+      setError(err.message || "Failed to send message");
       console.error(err);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -142,32 +153,47 @@ export function ChatInterface() {
     setIsLoading(true);
     setError(null);
 
+    // Add placeholder for assistant message
+    const assistantMessage: MessageType = {
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, assistantMessage]);
+
     try {
-      const response = await fetch(`/api/sessions/${sessionId}/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await sendMessageStream(
+        sessionId,
+        {
           content: `Em cần gợi ý cấp độ ${level}`,
           hint_requested: true,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to request hint");
-
-      const data = await response.json();
-
-      const assistantMessage: MessageType = {
-        role: "assistant",
-        content: data.message.content,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setSessionState(data.session_state);
-    } catch (err) {
-      setError("Failed to request hint");
+        },
+        token,
+        (content, done, sessionState) => {
+          if (content) {
+            setMessages((prev) => {
+              const updated = [...prev];
+              const lastMsg = updated[updated.length - 1];
+              if (lastMsg && lastMsg.role === "assistant") {
+                updated[updated.length - 1] = {
+                  ...lastMsg,
+                  content: lastMsg.content + content,
+                };
+              }
+              return updated;
+            });
+          }
+          if (done) {
+            setIsLoading(false);
+            if (sessionState) {
+              setSessionState(sessionState);
+            }
+          }
+        }
+      );
+    } catch (err: any) {
+      setError(err.message || "Failed to request hint");
       console.error(err);
-    } finally {
       setIsLoading(false);
     }
   };

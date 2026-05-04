@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import UUID
 from datetime import datetime, timezone
+import json
 
 from db.database import get_db
 from db.models import Session, Problem, DialogueState, SessionStatus
@@ -70,9 +71,10 @@ async def get_session(
 async def send_message(
     session_id: UUID,
     message_data: MessageCreate,
+    stream: bool = False,
     db: AsyncSession = Depends(get_db)
 ):
-    """Send a message and get AI response (streaming)"""
+    """Send a message and get AI response (streaming or full)"""
     # Get session
     result = await db.execute(select(Session).where(Session.id == session_id))
     session = result.scalar_one_or_none()
@@ -142,51 +144,109 @@ async def send_message(
 
     # Get AI response
     try:
-        if tools:
-            response = await llm_client.get_response_with_tools(
-                messages=llm_messages,
-                system_prompt=system_prompt,
-                tools=tools
+        if stream:
+            return await stream_response(
+                llm_messages, system_prompt, tools, session, message_data, db
             )
         else:
-            response_text = await llm_client.get_response(
-                messages=llm_messages,
-                system_prompt=system_prompt
-            )
-            response = {"text": response_text, "tool_calls": []}
+            if tools:
+                response = await llm_client.get_response_with_tools(
+                    messages=llm_messages,
+                    system_prompt=system_prompt,
+                    tools=tools
+                )
+            else:
+                response_text = await llm_client.get_response(
+                    messages=llm_messages,
+                    system_prompt=system_prompt
+                )
+                response = {"text": response_text, "tool_calls": []}
 
-        # Add AI response to session
-        ai_message = {
-            "role": "assistant",
-            "content": response["text"],
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "tool_calls": response.get("tool_calls", [])
-        }
-        session.messages.append(ai_message)
-
-        # Update session state
-        if message_data.hint_requested:
-            session.hint_count += 1
-            if session.hint_level < 3:
-                session.hint_level += 1
-
-        await db.commit()
-        await db.refresh(session)
-
-        return {
-            "message": ai_message,
-            "session_state": {
-                "dialogue_state": session.dialogue_state.value,
-                "hint_level": session.hint_level,
-                "fail_count": session.fail_count
+            # Add AI response to session
+            ai_message = {
+                "role": "assistant",
+                "content": response["text"],
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "tool_calls": response.get("tool_calls", [])
             }
-        }
+            session.messages.append(ai_message)
+
+            # Update session state
+            if message_data.hint_requested:
+                session.hint_count += 1
+                if session.hint_level < 3:
+                    session.hint_level += 1
+
+            await db.commit()
+            await db.refresh(session)
+
+            return {
+                "message": ai_message,
+                "session_state": {
+                    "dialogue_state": session.dialogue_state.value,
+                    "hint_level": session.hint_level,
+                    "fail_count": session.fail_count
+                }
+            }
 
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error getting AI response: {str(e)}"
         )
+
+
+async def stream_response(llm_messages, system_prompt, tools, session, message_data, db):
+    """Stream AI response using Server-Sent Events"""
+    from fastapi.responses import StreamingResponse
+
+    async def generate():
+        full_response = ""
+        try:
+            async for chunk in llm_client.stream_response(
+                messages=llm_messages,
+                system_prompt=system_prompt,
+                tools=tools if tools else None
+            ):
+                full_response += chunk
+                # SSE format
+                data = json.dumps({"content": chunk, "done": False})
+                yield f"data: {data}\n\n"
+
+            # Add complete AI response to session
+            ai_message = {
+                "role": "assistant",
+                "content": full_response,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "tool_calls": []
+            }
+            session.messages.append(ai_message)
+
+            # Update session state
+            if message_data.hint_requested:
+                session.hint_count += 1
+                if session.hint_level < 3:
+                    session.hint_level += 1
+
+            await db.commit()
+            await db.refresh(session)
+
+            # Send completion message
+            done_data = json.dumps({"content": "", "done": True, "session_state": {
+                "dialogue_state": session.dialogue_state.value,
+                "hint_level": session.hint_level,
+                "fail_count": session.fail_count
+            }})
+            yield f"data: {done_data}\n\n"
+
+        except Exception as e:
+            error_data = json.dumps({"error": str(e)})
+            yield f"data: {error_data}\n\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream"
+    )
 
 
 @router.put("/{session_id}/complete", response_model=SessionCompleteResponse)
