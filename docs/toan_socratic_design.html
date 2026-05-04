@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toán Socratic — Design Draft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════ */
+:root {
+  /* Surfaces */
+  --bg:          #F7F4EE;
+  --surface:     #FFFFFF;
+  --surface-2:   #F0EDE5;
+  --surface-3:   #E8E3D8;
+
+  /* Brand */
+  --brand:       #C2391E;
+  --brand-light: #FBF0EC;
+  --brand-mid:   #F5D0C5;
+  --brand-dark:  #8C2310;
+
+  /* Text */
+  --ink:         #1C1916;
+  --ink-2:       #4A4640;
+  --ink-3:       #8A857C;
+  --ink-4:       #B8B3AA;
+
+  /* Semantic */
+  --green:       #1A6B45;
+  --green-light: #EBF7F1;
+  --blue:        #1D4FA0;
+  --blue-light:  #EDF2FB;
+  --amber:       #9A6500;
+  --amber-light: #FEF7E0;
+  --red:         #B83030;
+  --red-light:   #FBEDED;
+
+  /* Borders */
+  --line:        rgba(28,25,22,0.10);
+  --line-2:      rgba(28,25,22,0.16);
+
+  /* Spacing */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'DM Sans', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  /* Shadows */
+  --shadow-sm:   0 1px 4px rgba(28,25,22,0.08);
+  --shadow-md:   0 4px 16px rgba(28,25,22,0.10);
+  --shadow-lg:   0 12px 40px rgba(28,25,22,0.14);
+}
+
+/* ═══════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: var(--font-body); cursor: pointer; border: none; background: none; }
+input, textarea { font-family: var(--font-body); }
+
+/* ═══════════════════════════════════════════════
+   UTILITY CLASSES
+═══════════════════════════════════════════════ */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+.fade-in { animation: fadeUp .35s ease both; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-1 { animation-delay: .05s; }
+.stagger-2 { animation-delay: .10s; }
+.stagger-3 { animation-delay: .15s; }
+.stagger-4 { animation-delay: .20s; }
+.stagger-5 { animation-delay: .25s; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN SYSTEM
+═══════════════════════════════════════════════ */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN NAV (bottom dev bar)
+═══════════════════════════════════════════════ */
+.dev-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 999;
+  background: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; padding: 8px 16px;
+}
+.dev-nav span { font-size: 11px; color: var(--ink-3); margin-right: 8px; font-family: var(--font-mono); }
+.dev-btn {
+  font-size: 11px; font-family: var(--font-mono);
+  padding: 5px 14px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.6);
+  transition: all .15s;
+}
+.dev-btn:hover, .dev-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+/* ═══════════════════════════════════════════════
+   COMPONENTS
+═══════════════════════════════════════════════ */
+
+/* Sidebar */
+.sidebar {
+  width: 220px; flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  display: flex; flex-direction: column;
+  padding: 0;
+  position: relative;
+  height: calc(100vh - 40px); /* 40px for dev-nav */
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-icon {
+  width: 32px; height: 32px; border-radius: var(--r-md);
+  background: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-icon svg { width: 16px; height: 16px; }
+.logo-text {
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 700;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.logo-text small {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 11px; font-weight: 400;
+  color: var(--ink-3);
+  letter-spacing: .02em;
+}
+.sidebar-nav { flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: var(--r-md);
+  font-size: 13.5px; color: var(--ink-2);
+  transition: background .12s, color .12s;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--surface-2); color: var(--ink); }
+.nav-item.active { background: var(--brand-light); color: var(--brand); font-weight: 500; }
+.nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .7; }
+.nav-item.active svg { opacity: 1; }
+.nav-section-label {
+  font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-4); padding: 14px 12px 4px; font-weight: 500;
+}
+.sidebar-user {
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; gap: 10px;
+}
+.user-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--brand-light); border: 2px solid var(--brand-mid);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: var(--brand);
+  flex-shrink: 0;
+}
+.user-name { font-size: 13px; font-weight: 500; line-height: 1.2; }
+.user-role { font-size: 11px; color: var(--ink-3); }
+
+/* Main area */
+.main { flex: 1; overflow-y: auto; padding: 32px 36px 80px; }
+.page-header { margin-bottom: 28px; }
+.page-title {
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 700;
+  line-height: 1.2; margin-bottom: 4px;
+}
+.page-sub { font-size: 14px; color: var(--ink-3); }
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: 20px 22px;
+}
+.card-sm {
+  background: var(--surface-2);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+}
+.metric-val { font-size: 28px; font-weight: 600; line-height: 1.1; }
+.metric-lbl { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+/* Badges */
+.badge {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 500;
+  padding: 3px 9px; border-radius: 20px;
+  letter-spacing: .02em;
+}
+.badge-red    { background: var(--red-light);   color: var(--red); }
+.badge-green  { background: var(--green-light);  color: var(--green); }
+.badge-blue   { background: var(--blue-light);   color: var(--blue); }
+.badge-amber  { background: var(--amber-light);  color: var(--amber); }
+.badge-brand  { background: var(--brand-light);  color: var(--brand); }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13.5px; font-weight: 500;
+  padding: 9px 18px; border-radius: var(--r-md);
+  transition: all .15s; white-space: nowrap;
+}
+.btn-primary {
+  background: var(--brand); color: #fff;
+  border: 1px solid var(--brand);
+}
+.btn-primary:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
+.btn-ghost {
+  background: transparent; color: var(--ink-2);
+  border: 1px solid var(--line-2);
+}
+.btn-ghost:hover { background: var(--surface-2); }
+.btn-sm { font-size: 12px; padding: 6px 13px; }
+
+/* Progress bars */
+.progress-track { height: 5px; background: var(--surface-3); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+
+/* Topic mastery color scale */
+.fill-high   { background: var(--green); }
+.fill-mid    { background: var(--amber); }
+.fill-low    { background: var(--red); }
+.fill-brand  { background: var(--brand); }
+.fill-blue   { background: var(--blue); }
+
+/* Section titles */
+.sec-title { font-size: 13px; font-weight: 600; color: var(--ink); margin-bottom: 14px; letter-spacing: -.01em; }
+.sec-label { font-size: 10px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 10px; }
+
+/* Divider */
+.divider { height: 1px; background: var(--line); margin: 16px 0; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 1 — LOGIN
+═══════════════════════════════════════════════ */
+#screen-login {
+  background: var(--bg);
+  align-items: center; justify-content: center;
+  padding-bottom: 40px;
+}
+.login-wrap {
+  display: grid; grid-template-columns: 1fr 1fr;
+  max-width: 900px; width: 100%;
+  background: var(--surface);
+  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+}
+.login-left {
+  background: var(--ink);
+  padding: 56px 48px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.login-left::before {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 260px; height: 260px;
+  background: var(--brand);
+  border-radius: 50%; opacity: .12;
+}
+.login-left::after {
+  content: '';
+  position: absolute; bottom: -40px; left: -40px;
+  width: 180px; height: 180px;
+  background: var(--brand);
+  border-radius: 50%; opacity: .08;
+}
+.login-brand {
+  display: flex; align-items: center; gap: 12px;
+  position: relative; z-index: 1;
+}
+.login-brand-icon {
+  width: 40px; height: 40px;
+  background: var(--brand);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.login-brand-text {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 700;
+  color: #fff; line-height: 1.1;
+}
+.login-brand-text small {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 12px; font-weight: 300;
+  color: rgba(255,255,255,.5);
+}
+.login-hero { position: relative; z-index: 1; }
+.login-hero-title {
+  font-family: var(--font-display);
+  font-size: 32px; font-weight: 700;
+  color: #fff; line-height: 1.25;
+  margin-bottom: 14px;
+}
+.login-hero-title em { font-style: italic; color: var(--brand-mid); }
+.login-hero-desc { font-size: 14px; color: rgba(255,255,255,.5); line-height: 1.65; }
+.login-features { position: relative; z-index: 1; }
+.login-feature {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin-bottom: 12px;
+}
+.login-feature-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--brand); flex-shrink: 0; margin-top: 7px;
+}
+.login-feature-text { font-size: 13px; color: rgba(255,255,255,.55); line-height: 1.5; }
+
+.login-right { padding: 56px 48px; }
+.login-right h2 {
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 700;
+  margin-bottom: 6px; color: var(--ink);
+}
+.login-right p { font-size: 14px; color: var(--ink-3); margin-bottom: 32px; }
+.oauth-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center;
+  gap: 12px; padding: 13px 20px;
+  border-radius: var(--r-md); border: 1px solid var(--line-2);
+  background: var(--surface); font-size: 14px; font-weight: 500;
+  color: var(--ink); margin-bottom: 12px; cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.oauth-btn:hover { border-color: var(--line-2); box-shadow: var(--shadow-sm); }
+.oauth-btn svg { width: 20px; height: 20px; }
+.login-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0; color: var(--ink-4); font-size: 12px;
+}
+.login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 500; color: var(--ink-2); margin-bottom: 5px; }
+.form-input {
+  width: 100%; padding: 10px 14px;
+  border: 1px solid var(--line-2); border-radius: var(--r-md);
+  font-size: 14px; color: var(--ink);
+  background: var(--surface);
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.form-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+.login-submit {
+  width: 100%; padding: 12px; border-radius: var(--r-md);
+  background: var(--brand); color: #fff;
+  font-size: 14px; font-weight: 600;
+  border: none; cursor: pointer; margin-top: 6px;
+  transition: background .15s;
+}
+.login-submit:hover { background: var(--brand-dark); }
+.login-footer { text-align: center; margin-top: 20px; font-size: 13px; color: var(--ink-3); }
+.login-footer a { color: var(--brand); text-decoration: none; font-weight: 500; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 2 — DASHBOARD
+═══════════════════════════════════════════════ */
+#screen-dashboard { flex-direction: row; height: calc(100vh - 40px); overflow: hidden; }
+.db-main { flex: 1; overflow-y: auto; padding: 32px 36px 80px; }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.db-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+.mastery-list { display: flex; flex-direction: column; gap: 2px; }
+.mastery-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: var(--r-md);
+  transition: background .12s; cursor: pointer;
+}
+.mastery-row:hover { background: var(--surface-2); }
+.mastery-icon {
+  width: 32px; height: 32px; border-radius: var(--r-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+.mastery-name { font-size: 13.5px; font-weight: 500; flex: 1; }
+.mastery-track-wrap { width: 100px; flex-shrink: 0; }
+.mastery-pct { font-size: 12px; color: var(--ink-3); min-width: 34px; text-align: right; }
+.session-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 0; border-bottom: 1px solid var(--line);
+}
+.session-card:last-child { border-bottom: none; }
+.session-thumb {
+  width: 36px; height: 36px; border-radius: var(--r-md);
+  background: var(--surface-2); display: flex; align-items: center;
+  justify-content: center; font-size: 15px; flex-shrink: 0;
+}
+.session-info { flex: 1; }
+.session-title { font-size: 13.5px; font-weight: 500; margin-bottom: 2px; }
+.session-meta { font-size: 12px; color: var(--ink-3); }
+.suggest-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px; border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface); margin-bottom: 10px;
+  cursor: pointer; transition: border-color .15s, box-shadow .15s;
+}
+.suggest-item:hover { border-color: var(--line-2); box-shadow: var(--shadow-sm); }
+.suggest-item:last-child { margin-bottom: 0; }
+.suggest-priority {
+  width: 4px; align-self: stretch;
+  border-radius: 2px; flex-shrink: 0;
+}
+.suggest-body { flex: 1; }
+.suggest-tag { font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 3px; }
+.suggest-title { font-size: 13.5px; font-weight: 500; margin-bottom: 2px; }
+.suggest-desc { font-size: 12px; color: var(--ink-3); line-height: 1.5; }
+.streak-wrap { display: flex; gap: 5px; align-items: center; }
+.streak-pip {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: var(--surface-3);
+  transition: background .15s;
+}
+.streak-pip.active { background: var(--green); }
+.streak-pip.today { background: var(--blue); }
+.streak-label { font-size: 11px; color: var(--ink-4); margin-left: 4px; }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 3 — TOPICS
+═══════════════════════════════════════════════ */
+#screen-topics { flex-direction: row; height: calc(100vh - 40px); overflow: hidden; }
+.topics-main { flex: 1; overflow-y: auto; padding: 32px 36px 80px; }
+.topics-search-bar {
+  display: flex; gap: 10px; align-items: center; margin-bottom: 24px;
+}
+.topics-search {
+  flex: 1; padding: 11px 16px;
+  border: 1px solid var(--line-2); border-radius: var(--r-md);
+  font-size: 14px; color: var(--ink); background: var(--surface);
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.topics-search:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+.filter-chip {
+  padding: 8px 16px; border-radius: 20px;
+  border: 1px solid var(--line-2); font-size: 13px;
+  color: var(--ink-2); background: var(--surface);
+  cursor: pointer; transition: all .12s; white-space: nowrap;
+}
+.filter-chip.active { background: var(--brand-light); color: var(--brand); border-color: var(--brand-mid); font-weight: 500; }
+.topics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.topic-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, transform .15s;
+  position: relative; overflow: hidden;
+}
+.topic-card:hover { border-color: var(--line-2); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.topic-card.weak { border-color: var(--brand-mid); }
+.topic-card-accent { position: absolute; top: 0; right: 0; width: 80px; height: 80px; border-radius: 0 var(--r-xl) 0 80px; opacity: .06; }
+.topic-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.topic-icon {
+  width: 44px; height: 44px; border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.topic-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+.topic-chapters { font-size: 12px; color: var(--ink-3); margin-bottom: 14px; }
+.topic-mastery-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.topic-mastery-track { flex: 1; }
+.topic-mastery-pct { font-size: 12px; color: var(--ink-3); min-width: 32px; text-align: right; }
+.topic-footer { display: flex; align-items: center; justify-content: space-between; }
+.topic-cta {
+  font-size: 12px; font-weight: 500; padding: 6px 14px;
+  border-radius: 20px; border: 1px solid var(--line-2);
+  color: var(--ink-2); background: var(--surface-2);
+  transition: all .12s;
+}
+.topic-card:hover .topic-cta { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 4 — SESSION
+═══════════════════════════════════════════════ */
+#screen-session { flex-direction: row; height: calc(100vh - 40px); overflow: hidden; }
+.session-container { flex: 1; display: grid; grid-template-columns: 1fr 380px; height: 100%; overflow: hidden; }
+
+/* Chat side */
+.chat-side { display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--surface); overflow: hidden; }
+.chat-topbar {
+  padding: 16px 20px; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  background: var(--surface);
+}
+.chat-topbar-back {
+  width: 30px; height: 30px; border-radius: var(--r-md);
+  border: 1px solid var(--line-2); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0; transition: background .12s;
+}
+.chat-topbar-back:hover { background: var(--surface-2); }
+.chat-topic-pill {
+  font-size: 11px; font-weight: 500; padding: 4px 10px;
+  border-radius: 20px; background: var(--surface-2); color: var(--ink-2);
+}
+.chat-phase-pill {
+  font-size: 11px; font-weight: 600; padding: 4px 10px;
+  border-radius: 20px; letter-spacing: .04em;
+}
+.phase-heuristic { background: var(--blue-light); color: var(--blue); }
+.phase-rectify   { background: var(--amber-light); color: var(--amber); }
+.phase-summarize { background: var(--green-light); color: var(--green); }
+.phase-review    { background: var(--brand-light); color: var(--brand); }
+.chat-timer { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--ink-4); }
+
+.problem-strip {
+  padding: 14px 20px; border-bottom: 1px solid var(--line);
+  background: var(--bg); flex-shrink: 0;
+}
+.problem-strip-label { font-size: 10px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 6px; }
+.problem-text { font-size: 13.5px; color: var(--ink); line-height: 1.6; }
+.problem-math {
+  margin-top: 8px; font-family: var(--font-mono);
+  font-size: 12.5px; color: var(--blue);
+  background: var(--blue-light); padding: 8px 12px;
+  border-radius: var(--r-md); line-height: 1.7;
+}
+
+.chat-messages {
+  flex: 1; overflow-y: auto; padding: 20px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.msg-row { display: flex; gap: 10px; align-items: flex-end; }
+.msg-row.student { flex-direction: row-reverse; }
+.msg-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+}
+.msg-ai-avatar    { background: var(--brand-light); color: var(--brand); }
+.msg-user-avatar  { background: var(--blue-light); color: var(--blue); }
+.msg-bubble {
+  max-width: 78%; padding: 11px 15px;
+  border-radius: 16px; font-size: 13.5px; line-height: 1.6;
+}
+.msg-ai-bubble {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 4px;
+  color: var(--ink);
+}
+.msg-user-bubble {
+  background: var(--blue); color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.msg-math {
+  font-family: var(--font-mono); font-size: 12px;
+  background: var(--surface); border: 1px solid var(--line);
+  padding: 6px 10px; border-radius: var(--r-sm);
+  margin-top: 6px; color: var(--ink-2);
+}
+.msg-highlight {
+  border-left: 3px solid var(--green); padding-left: 12px;
+  color: var(--ink);
+}
+.typing-indicator { display: flex; gap: 4px; padding: 12px 15px; }
+.typing-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ink-4); animation: typeBounce 1.4s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay: .2s; }
+.typing-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes typeBounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-5px); } }
+
+.chat-input-bar {
+  padding: 14px 16px; border-top: 1px solid var(--line);
+  background: var(--surface); flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.hint-row { display: flex; gap: 8px; align-items: center; }
+.hint-level-label { font-size: 11px; color: var(--ink-4); font-family: var(--font-mono); }
+.hint-level-btn {
+  font-size: 11px; padding: 4px 12px; border-radius: 20px;
+  border: 1px solid var(--line-2); color: var(--ink-3);
+  background: var(--surface-2); transition: all .12s;
+}
+.hint-level-btn.current { background: var(--amber-light); color: var(--amber); border-color: rgba(154,101,0,.2); font-weight: 500; }
+.hint-level-btn:hover:not(.current) { border-color: var(--amber); color: var(--amber); }
+.input-row { display: flex; gap: 8px; align-items: flex-end; }
+.msg-input {
+  flex: 1; padding: 10px 14px; border-radius: var(--r-md);
+  border: 1px solid var(--line-2); background: var(--surface);
+  font-size: 13.5px; color: var(--ink); resize: none;
+  outline: none; transition: border-color .15s, box-shadow .15s;
+  min-height: 40px; max-height: 120px;
+}
+.msg-input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-light); }
+.send-btn {
+  width: 40px; height: 40px; border-radius: var(--r-md);
+  background: var(--brand); display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: background .12s;
+}
+.send-btn:hover { background: var(--brand-dark); }
+.send-btn svg { width: 16px; height: 16px; }
+
+/* Viewer side */
+.viewer-side {
+  display: flex; flex-direction: column; background: var(--bg); overflow: hidden;
+}
+.viewer-topbar {
+  padding: 14px 18px; border-bottom: 1px solid var(--line);
+  background: var(--surface); display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+.viewer-title { font-size: 13px; font-weight: 500; flex: 1; }
+.viewer-ctrl-group { display: flex; gap: 4px; }
+.ctrl-chip {
+  font-size: 11px; padding: 5px 11px; border-radius: 20px;
+  border: 1px solid var(--line-2); background: var(--surface);
+  color: var(--ink-2); cursor: pointer; transition: all .12s;
+}
+.ctrl-chip.active { background: var(--blue-light); color: var(--blue); border-color: rgba(29,79,160,.2); font-weight: 500; }
+.ctrl-chip:hover:not(.active) { background: var(--surface-2); }
+
+.viewer-canvas {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 16px; position: relative;
+}
+.viewer-hint-text {
+  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; color: var(--ink-4); white-space: nowrap;
+  background: var(--surface); padding: 4px 12px; border-radius: 20px;
+  border: 1px solid var(--line);
+}
+
+.viewer-info { padding: 0 16px 16px; flex-shrink: 0; }
+.info-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); padding: 14px 16px;
+}
+.info-title { font-size: 12px; font-weight: 600; margin-bottom: 10px; color: var(--ink); }
+.info-row {
+  display: flex; justify-content: space-between;
+  font-size: 12.5px; padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+}
+.info-row:last-child { border-bottom: none; }
+.info-key { color: var(--ink-3); }
+.info-val { font-family: var(--font-mono); font-size: 12px; color: var(--ink); font-weight: 500; }
+.info-val.highlight { color: var(--blue); }
+
+.progress-panel { padding: 0 16px 16px; flex-shrink: 0; }
+.progress-panel-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-lg); padding: 14px 16px;
+}
+.phase-steps { display: flex; gap: 0; }
+.phase-step {
+  flex: 1; text-align: center; position: relative;
+  padding-bottom: 10px;
+}
+.phase-step::after {
+  content: ''; position: absolute;
+  right: 0; top: 10px; height: 2px;
+  width: 100%; background: var(--line);
+}
+.phase-step:last-child::after { display: none; }
+.phase-step.done::after { background: var(--green); }
+.phase-step.active::after { background: var(--line); }
+.phase-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--surface-3); border: 2px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 6px; position: relative; z-index: 1;
+  font-size: 10px;
+}
+.phase-step.done .phase-dot { background: var(--green); border-color: var(--green); }
+.phase-step.active .phase-dot { background: var(--blue); border-color: var(--blue); }
+.phase-step-name { font-size: 10px; color: var(--ink-4); letter-spacing: .04em; }
+.phase-step.active .phase-step-name { color: var(--blue); font-weight: 500; }
+.phase-step.done .phase-step-name { color: var(--green); }
+
+/* ═══════════════════════════════════════════════
+   SCREEN 5 — SESSION SUMMARY
+═══════════════════════════════════════════════ */
+#screen-summary {
+  background: var(--bg);
+  align-items: center; justify-content: center;
+  padding-bottom: 40px;
+}
+.summary-wrap {
+  max-width: 640px; width: 100%;
+}
+.summary-header {
+  text-align: center; margin-bottom: 28px;
+}
+.summary-icon {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: var(--green-light); border: 2px solid var(--green);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px; font-size: 26px;
+}
+.summary-title {
+  font-family: var(--font-display); font-size: 28px; font-weight: 700;
+  margin-bottom: 6px;
+}
+.summary-sub { font-size: 14px; color: var(--ink-3); }
+.summary-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.summary-stat { text-align: center; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xl); }
+.summary-stat-val { font-size: 24px; font-weight: 600; margin-bottom: 2px; }
+.summary-stat-lbl { font-size: 12px; color: var(--ink-3); }
+.summary-ai-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-xl); padding: 20px 22px; margin-bottom: 16px;
+}
+.summary-ai-header { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.summary-ai-badge {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--brand-light); display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--brand);
+}
+.summary-ai-title { font-size: 13px; font-weight: 600; }
+.summary-ai-sub { font-size: 11px; color: var(--ink-3); }
+.summary-ai-text { font-size: 13.5px; color: var(--ink-2); line-height: 1.65; }
+.summary-mastery-change {
+  background: var(--green-light); border: 1px solid rgba(26,107,69,.2);
+  border-radius: var(--r-lg); padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+}
+.mastery-change-icon { font-size: 20px; }
+.mastery-change-text { flex: 1; }
+.mastery-change-title { font-size: 13.5px; font-weight: 500; color: var(--green); margin-bottom: 2px; }
+.mastery-change-sub { font-size: 12px; color: var(--green); opacity: .8; }
+.mastery-change-delta { font-size: 20px; font-weight: 700; color: var(--green); font-family: var(--font-mono); }
+.summary-next { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xl); padding: 18px 20px; margin-bottom: 20px; }
+.summary-next-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.next-topic-card {
+  display: flex; gap: 12px; align-items: center;
+  padding: 12px 14px; border-radius: var(--r-lg);
+  border: 1px solid var(--line-2); background: var(--bg);
+  cursor: pointer; transition: border-color .15s;
+}
+.next-topic-card:hover { border-color: var(--brand); }
+.next-topic-icon { width: 36px; height: 36px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 16px; background: var(--brand-light); }
+.next-topic-name { font-size: 13.5px; font-weight: 500; }
+.next-topic-desc { font-size: 12px; color: var(--ink-3); }
+.summary-actions { display: flex; gap: 10px; }
+.rating-row { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+.rating-label { font-size: 13px; color: var(--ink-2); }
+.star-btn { font-size: 20px; cursor: pointer; opacity: .4; transition: opacity .12s; }
+.star-btn:hover, .star-btn.active { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- ══ DEV NAV ══ -->
+<div class="dev-nav">
+  <span>Screens →</span>
+  <button class="dev-btn active" onclick="go('login')">Login</button>
+  <button class="dev-btn" onclick="go('dashboard')">Dashboard</button>
+  <button class="dev-btn" onclick="go('topics')">Topics</button>
+  <button class="dev-btn" onclick="go('session')">Session</button>
+  <button class="dev-btn" onclick="go('summary')">Summary</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1 — LOGIN
+══════════════════════════════════════ -->
+<div class="screen active" id="screen-login">
+  <div class="login-wrap fade-in">
+    <div class="login-left">
+      <div class="login-brand">
+        <div class="login-brand-icon">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L17 14H3L10 2Z" fill="white" fill-opacity=".9"/>
+          </svg>
+        </div>
+        <div class="login-brand-text">
+          Toán Socratic
+          <small>Gia sư AI · Lớp 12</small>
+        </div>
+      </div>
+      <div class="login-hero">
+        <div class="login-hero-title">
+          Học Toán theo cách<br><em>bạn tự nghĩ ra</em>
+        </div>
+        <div class="login-hero-desc">
+          Không phải nhìn lời giải — mà là tự tìm ra đáp án với sự dẫn dắt thông minh. Phương pháp Socratic giúp bạn hiểu sâu, nhớ lâu hơn.
+        </div>
+      </div>
+      <div class="login-features">
+        <div class="login-feature">
+          <div class="login-feature-dot"></div>
+          <div class="login-feature-text">Đối thoại Socratic — AI hỏi, bạn khám phá</div>
+        </div>
+        <div class="login-feature">
+          <div class="login-feature-dot"></div>
+          <div class="login-feature-text">Hình học 3D tương tác — xoay, cắt, khám phá</div>
+        </div>
+        <div class="login-feature">
+          <div class="login-feature-dot"></div>
+          <div class="login-feature-text">Bám sát chương trình THPT Quốc gia 2025</div>
+        </div>
+      </div>
+    </div>
+    <div class="login-right">
+      <h2>Đăng nhập</h2>
+      <p>Chào mừng trở lại! Hãy tiếp tục học.</p>
+
+      <button class="oauth-btn" onclick="go('dashboard')">
+        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Tiếp tục với Google
+      </button>
+
+      <div class="login-divider">hoặc</div>
+
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" placeholder="ten@email.com" value="khoa@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu</label>
+        <input class="form-input" type="password" placeholder="••••••••" value="password">
+      </div>
+      <button class="login-submit" onclick="go('dashboard')">Đăng nhập →</button>
+
+      <div class="login-footer">
+        Chưa có tài khoản? <a href="#">Đăng ký miễn phí</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 2 — DASHBOARD
+══════════════════════════════════════ -->
+<div class="screen" id="screen-dashboard">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M10 2L17 14H3L10 2Z" fill="white" fill-opacity=".9"/></svg>
+      </div>
+      <div class="logo-text">Toán Socratic <small>Lớp 12</small></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Chính</div>
+      <a class="nav-item active" href="#">
+        <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>
+        Tổng quan
+      </a>
+      <a class="nav-item" href="#" onclick="event.preventDefault();go('topics')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 2v12"/></svg>
+        Chủ đề
+      </a>
+      <a class="nav-item" href="#" onclick="event.preventDefault();go('session')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>
+        Phiên học mới
+      </a>
+      <div class="nav-section-label" style="margin-top:8px">Học tập</div>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 1L2 5v8l6 2 6-2V5L8 1z"/></svg>
+        Lịch sử
+      </a>
+      <a class="nav-item" href="#">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5"/></svg>
+        Tiến độ
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar">NK</div>
+      <div>
+        <div class="user-name">Nguyễn Khoa</div>
+        <div class="user-role">Lớp 12A · THPT</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="db-main">
+    <div class="page-header fade-in">
+      <div class="page-title">Chào buổi tối, Khoa 👋</div>
+      <div class="page-sub">Hôm nay bạn đã học 0 phút. Hãy bắt đầu một phiên mới!</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="card-sm fade-in stagger-1">
+        <div class="metric-lbl">Streak</div>
+        <div class="metric-val" style="color:var(--green)">5 🔥</div>
+        <div style="font-size:11px;color:var(--ink-4);margin-top:2px">ngày liên tiếp</div>
+      </div>
+      <div class="card-sm fade-in stagger-2">
+        <div class="metric-lbl">Phiên học tuần này</div>
+        <div class="metric-val">7</div>
+        <div style="font-size:11px;color:var(--ink-4);margin-top:2px">+2 so với tuần trước</div>
+      </div>
+      <div class="card-sm fade-in stagger-3">
+        <div class="metric-lbl">Chủ đề nắm chắc</div>
+        <div class="metric-val">3<span style="font-size:16px;color:var(--ink-4)">/8</span></div>
+        <div style="font-size:11px;color:var(--ink-4);margin-top:2px">cần luyện thêm 5</div>
+      </div>
+      <div class="card-sm fade-in stagger-4" style="cursor:pointer" onclick="go('session')">
+        <div class="metric-lbl">Bắt đầu học</div>
+        <div class="btn btn-primary btn-sm" style="margin-top:8px;width:100%;justify-content:center">
+          Phiên mới →
+        </div>
+      </div>
+    </div>
+
+    <div class="db-grid">
+      <!-- Left column -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+
+        <!-- Mastery -->
+        <div class="card fade-in">
+          <div class="sec-title">Mức độ nắm chắc theo chủ đề</div>
+          <div class="mastery-list">
+            <div class="mastery-row" onclick="go('topics')">
+              <div class="mastery-icon" style="background:var(--green-light)">∫</div>
+              <div class="mastery-name">Giải tích</div>
+              <div class="mastery-track-wrap">
+                <div class="progress-track"><div class="progress-fill fill-high" style="width:72%"></div></div>
+              </div>
+              <div class="mastery-pct">72%</div>
+              <span class="badge badge-green">Tốt</span>
+            </div>
+            <div class="mastery-row" onclick="go('topics')" style="background:var(--brand-light);border-radius:var(--r-md)">
+              <div class="mastery-icon" style="background:var(--brand-light)">△</div>
+              <div class="mastery-name" style="font-weight:600">Hình học KG</div>
+              <div class="mastery-track-wrap">
+                <div class="progress-track"><div class="progress-fill fill-low" style="width:38%"></div></div>
+              </div>
+              <div class="mastery-pct">38%</div>
+              <span class="badge badge-red">Yếu !</span>
+            </div>
+            <div class="mastery-row" onclick="go('topics')">
+              <div class="mastery-icon" style="background:var(--blue-light)">P</div>
+              <div class="mastery-name">Xác suất</div>
+              <div class="mastery-track-wrap">
+                <div class="progress-track"><div class="progress-fill fill-blue" style="width:55%"></div></div>
+              </div>
+              <div class="mastery-pct">55%</div>
+              <span class="badge badge-blue">Trung bình</span>
+            </div>
+            <div class="mastery-row" onclick="go('topics')">
+              <div class="mastery-icon" style="background:var(--surface-2)">f(x)</div>
+              <div class="mastery-name">Hàm số & Đại số</div>
+              <div class="mastery-track-wrap">
+                <div class="progress-track"><div class="progress-fill fill-high" style="width:81%"></div></div>
+              </div>
+              <div class="mastery-pct">81%</div>
+              <span class="badge badge-green">Tốt</span>
+            </div>
+            <div class="mastery-row" onclick="go('topics')">
+              <div class="mastery-icon" style="background:var(--amber-light)">sin</div>
+              <div class="mastery-name">Lượng giác</div>
+              <div class="mastery-track-wrap">
+                <div class="progress-track"><div class="progress-fill fill-mid" style="width:44%"></div></div>
+              </div>
+              <div class="mastery-pct">44%</div>
+              <span class="badge badge-amber">Cần ôn</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+          <div class="sec-label">Hoạt động 7 ngày qua</div>
+          <div class="streak-wrap">
+            <div class="streak-pip active" title="T2"></div>
+            <div class="streak-pip active" title="T3"></div>
+            <div class="streak-pip" title="T4"></div>
+            <div class="streak-pip active" title="T5"></div>
+            <div class="streak-pip active" title="T6"></div>
+            <div class="streak-pip active" title="T7"></div>
+            <div class="streak-pip today" title="CN — Hôm nay"></div>
+            <div class="streak-label">Hôm nay</div>
+          </div>
+        </div>
+
+        <!-- Recent sessions -->
+        <div class="card fade-in stagger-2">
+          <div class="sec-title">Phiên học gần đây</div>
+          <div class="session-card">
+            <div class="session-thumb">📐</div>
+            <div class="session-info">
+              <div class="session-title">Hình chóp — Thể tích & đường cao</div>
+              <div class="session-meta">Hôm nay · 18 phút · 2 gợi ý dùng</div>
+            </div>
+            <span class="badge badge-green">✓ Hoàn thành</span>
+          </div>
+          <div class="session-card">
+            <div class="session-thumb">∫</div>
+            <div class="session-info">
+              <div class="session-title">Tích phân — Diện tích hình phẳng</div>
+              <div class="session-meta">Hôm qua · 24 phút · 0 gợi ý</div>
+            </div>
+            <span class="badge badge-green">✓ Hoàn thành</span>
+          </div>
+          <div class="session-card">
+            <div class="session-thumb">△</div>
+            <div class="session-info">
+              <div class="session-title">Lượng giác — Phương trình lượng giác</div>
+              <div class="session-meta">2 ngày trước · 11 phút · 3 gợi ý</div>
+            </div>
+            <span class="badge badge-amber">Bỏ dở</span>
+          </div>
+          <div class="session-card">
+            <div class="session-thumb">P</div>
+            <div class="session-info">
+              <div class="session-title">Xác suất — Tổ hợp chỉnh hợp</div>
+              <div class="session-meta">3 ngày trước · 20 phút · 1 gợi ý</div>
+            </div>
+            <span class="badge badge-green">✓ Hoàn thành</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column — suggestions -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div class="card fade-in stagger-1">
+          <div class="sec-title">Gợi ý tiếp theo</div>
+          <div class="sec-label" style="margin-bottom:14px">Dựa trên điểm yếu của bạn</div>
+
+          <div class="suggest-item" onclick="go('session')">
+            <div class="suggest-priority" style="background:var(--brand)"></div>
+            <div class="suggest-body">
+              <div class="suggest-tag">Ưu tiên cao · Hình học KG</div>
+              <div class="suggest-title">Đường thẳng vuông góc mặt phẳng</div>
+              <div class="suggest-desc">Bạn gặp lỗi ở bước này 3 lần tuần trước — hãy luyện thêm để nắm chắc.</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--ink-4)" stroke-width="1.5"><path d="M5 3l4 4-4 4"/></svg>
+          </div>
+
+          <div class="suggest-item">
+            <div class="suggest-priority" style="background:var(--amber)"></div>
+            <div class="suggest-body">
+              <div class="suggest-tag">Ôn tập · Lượng giác</div>
+              <div class="suggest-title">Phương trình lượng giác cơ bản</div>
+              <div class="suggest-desc">Chưa thực hành 5 ngày — nên ôn lại trước khi quên.</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--ink-4)" stroke-width="1.5"><path d="M5 3l4 4-4 4"/></svg>
+          </div>
+
+          <div class="suggest-item">
+            <div class="suggest-priority" style="background:var(--blue)"></div>
+            <div class="suggest-body">
+              <div class="suggest-tag">Nâng cao · Giải tích</div>
+              <div class="suggest-title">Bất phương trình hàm số</div>
+              <div class="suggest-desc">Bạn đã nắm 72% Giải tích — thử thách với bài khó hơn.</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--ink-4)" stroke-width="1.5"><path d="M5 3l4 4-4 4"/></svg>
+          </div>
+        </div>
+
+        <div class="card fade-in stagger-2" style="padding:18px 20px">
+          <div class="sec-title" style="margin-bottom:6px">Mẹo học hôm nay</div>
+          <div style="font-size:13px;color:var(--ink-2);line-height:1.65;border-left:3px solid var(--brand);padding-left:12px;font-style:italic">
+            "Khi gặp bài hình học không gian, hãy vẽ hình trước khi tính. Một hình vẽ tốt giải quyết 50% bài toán."
+          </div>
+          <div style="font-size:11px;color:var(--ink-4);margin-top:8px">— Phương pháp Socratic</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 3 — TOPICS
+══════════════════════════════════════ -->
+<div class="screen" id="screen-topics">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><svg viewBox="0 0 20 20" fill="none"><path d="M10 2L17 14H3L10 2Z" fill="white" fill-opacity=".9"/></svg></div>
+      <div class="logo-text">Toán Socratic <small>Lớp 12</small></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Chính</div>
+      <a class="nav-item" href="#" onclick="event.preventDefault();go('dashboard')">
+        <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5"/></svg>Tổng quan
+      </a>
+      <a class="nav-item active" href="#">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M2 6h12M6 2v12"/></svg>Chủ đề
+      </a>
+      <a class="nav-item" href="#" onclick="event.preventDefault();go('session')">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>Phiên học mới
+      </a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar">NK</div>
+      <div><div class="user-name">Nguyễn Khoa</div><div class="user-role">Lớp 12A · THPT</div></div>
+    </div>
+  </div>
+
+  <div class="topics-main">
+    <div class="page-header fade-in">
+      <div class="page-title">Chủ đề</div>
+      <div class="page-sub">Chọn chủ đề để bắt đầu phiên Socratic. Ưu tiên chủ đề còn yếu.</div>
+    </div>
+
+    <div class="topics-search-bar fade-in">
+      <input class="topics-search" type="text" placeholder="Tìm kiếm: hình chóp, tích phân, xác suất…">
+      <button class="filter-chip active">Tất cả</button>
+      <button class="filter-chip">Còn yếu</button>
+      <button class="filter-chip">Có 3D</button>
+      <button class="filter-chip">Khó</button>
+    </div>
+
+    <div class="topics-grid">
+      <!-- Topic 1 -->
+      <div class="topic-card fade-in stagger-1">
+        <div class="topic-card-accent" style="background:var(--green)"></div>
+        <div class="topic-card-header">
+          <div class="topic-icon" style="background:var(--green-light);font-size:18px">∫</div>
+          <span class="badge badge-green">Tốt</span>
+        </div>
+        <div class="topic-name">Giải tích</div>
+        <div class="topic-chapters">5 chương · 42 bài tập · Đạo hàm, tích phân</div>
+        <div class="topic-mastery-row">
+          <div class="topic-mastery-track">
+            <div class="progress-track"><div class="progress-fill fill-high" style="width:72%"></div></div>
+          </div>
+          <div class="topic-mastery-pct">72%</div>
+        </div>
+        <div class="topic-footer">
+          <span class="badge badge-blue" style="font-size:10px">Không có 3D</span>
+          <button class="topic-cta" onclick="go('session')">Học tiếp →</button>
+        </div>
+      </div>
+
+      <!-- Topic 2 — weak, highlighted -->
+      <div class="topic-card weak fade-in stagger-2">
+        <div class="topic-card-accent" style="background:var(--brand)"></div>
+        <div class="topic-card-header">
+          <div class="topic-icon" style="background:var(--brand-light);font-size:18px">△</div>
+          <span class="badge badge-red">Cần luyện !</span>
+        </div>
+        <div class="topic-name">Hình học không gian</div>
+        <div class="topic-chapters">4 chương · 38 bài tập · Hình chóp, lăng trụ, cầu</div>
+        <div class="topic-mastery-row">
+          <div class="topic-mastery-track">
+            <div class="progress-track"><div class="progress-fill fill-low" style="width:38%"></div></div>
+          </div>
+          <div class="topic-mastery-pct">38%</div>
+        </div>
+        <div class="topic-footer">
+          <span class="badge badge-brand" style="font-size:10px">🔷 Có 3D</span>
+          <button class="topic-cta" onclick="go('session')">Luyện ngay →</button>
+        </div>
+      </div>
+
+      <!-- Topic 3 -->
+      <div class="topic-card fade-in stagger-3">
+        <div class="topic-card-accent" style="background:var(--blue)"></div>
+        <div class="topic-card-header">
+          <div class="topic-icon" style="background:var(--blue-light);font-size:15px">P(x)</div>
+          <span class="badge badge-blue">Trung bình</span>
+        </div>
+        <div class="topic-name">Xác suất & Thống kê</div>
+        <div class="topic-chapters">3 chương · 28 bài tập · Tổ hợp, xác suất</div>
+        <div class="topic-mastery-row">
+          <div class="topic-mastery-track">
+            <div class="progress-track"><div class="progress-fill fill-blue" style="width:55%"></div></div>
+          </div>
+          <div class="topic-mastery-pct">55%</div>
+        </div>
+        <div class="topic-footer">
+          <span class="badge" style="font-size:10px;background:var(--surface-2);color:var(--ink-3)">Không có 3D</span>
+          <button class="topic-cta" onclick="go('session')">Học tiếp →</button>
+        </div>
+      </div>
+
+      <!-- Topic 4 -->
+      <div class="topic-card fade-in stagger-1">
+        <div class="topic-card-accent" style="background:var(--ink-3)"></div>
+        <div class="topic-card-header">
+          <div class="topic-icon" style="background:var(--surface-2);font-size:13px">f(x)</div>
+          <span class="badge badge-green">Tốt</span>
+        </div>
+        <div class="topic-name">Hàm số & Đại số</div>
+        <div class="topic-chapters">4 chương · 36 bài tập · Đồ thị, phương trình</div>
+        <div class="topic-mastery-row">
+          <div class="topic-mastery-track">
+            <div class="progress-track"><div class="progress-fill fill-high" style="width:81%"></div></div>
+          </div>
+          <div class="topic-mastery-pct">81%</div>
+        </div>
+        <div class="topic-footer">
+          <span class="badge" style="font-size:10px;background:var(--surface-2);color:var(--ink-3)">Không có 3D</span>
+          <button class="topic-cta" onclick="go('session')">Xem thêm →</button>
+        </div>
+      </div>
+
+      <!-- Topic 5 -->
+      <div class="topic-card fade-in stagger-2">
+        <div class="topic-card-accent" style="background:var(--amber)"></div>
+        <div class="topic-card-header">
+          <div class="topic-icon" style="background:var(--amber-light);font-size:14px">sin</div>
+          <span class="badge badge-amber">Cần ôn</span>
+        </div>
+        <div class="topic-name">Lượng giác</div>
+        <div class="topic-chapters">3 chương · 24 bài tập · Hàm, phương trình</div>
+        <div class="topic-mastery-row">
+          <div class="topic-mastery-track">
+            <div class="progress-track"><div class="progress-fill fill-mid" style="width:44%"></div></div>
+          </div>
+          <div class="topic-mastery-pct">44%</div>
+        </div>
+        <div class="topic-footer">
+          <span class="badge" style="font-size:10px;background:var(--surface-2);color:var(--ink-3)">Không có 3D</span>
+          <button class="topic-cta" onclick="go('session')">Ôn tập →</button>
+        </div>
+      </div>
+
+      <!-- Topic 6 — locked/new -->
+      <div class="topic-card fade-in stagger-3" style="opacity:.55">
+        <div class="topic-card-header">
+          <div class="topic-icon" style="background:var(--surface-2);font-size:16px">ℂ</div>
+          <span class="badge" style="background:var(--surface-2);color:var(--ink-4)">Chưa bắt đầu</span>
+        </div>
+        <div class="topic-name">Số phức</div>
+        <div class="topic-chapters">2 chương · 18 bài tập</div>
+        <div class="topic-mastery-row">
+          <div class="topic-mastery-track">
+            <div class="progress-track"><div class="progress-fill" style="width:0%"></div></div>
+          </div>
+          <div class="topic-mastery-pct">0%</div>
+        </div>
+        <div class="topic-footer">
+          <span style="font-size:12px;color:var(--ink-4)">Chưa học</span>
+          <button class="topic-cta" onclick="go('session')">Bắt đầu →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 4 — SESSION
+══════════════════════════════════════ -->
+<div class="screen" id="screen-session">
+  <div class="session-container">
+
+    <!-- Chat side -->
+    <div class="chat-side">
+      <div class="chat-topbar">
+        <div class="chat-topbar-back" onclick="go('topics')">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--ink-2)" stroke-width="1.5"><path d="M9 3L5 7l4 4"/></svg>
+        </div>
+        <span class="chat-topic-pill">Hình học không gian</span>
+        <span class="chat-topic-pill">Hình chóp S.ABCD</span>
+        <span class="chat-phase-pill phase-heuristic">HEURISTIC</span>
+        <div class="chat-timer" id="timer">00:12:34</div>
+      </div>
+
+      <div class="problem-strip">
+        <div class="problem-strip-label">Đề bài</div>
+        <div class="problem-text">
+          Cho hình chóp <strong>S.ABCD</strong> có đáy ABCD là hình vuông cạnh 4 cm. Cạnh SA vuông góc với mặt đáy, SA = 6 cm.<br>
+          <strong>a)</strong> Tính thể tích hình chóp S.ABCD.<br>
+          <strong>b)</strong> Tính khoảng cách từ điểm A đến mặt phẳng (SBC).
+        </div>
+        <div class="problem-math">S.ABCD &nbsp;|&nbsp; AB = 4 cm &nbsp;|&nbsp; SA ⊥ (ABCD) &nbsp;|&nbsp; SA = 6 cm<br>Tính: V<sub>S.ABCD</sub> = ? &nbsp;&nbsp;·&nbsp;&nbsp; d(A, (SBC)) = ?</div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg-row fade-in">
+          <div class="msg-avatar msg-ai-avatar">AI</div>
+          <div class="msg-bubble msg-ai-bubble">
+            Chào em! Thầy thấy bài này có hai phần. Để bắt đầu, em hãy cho thầy biết: <strong>công thức tính thể tích hình chóp</strong> là gì? Em nhớ được không?
+          </div>
+        </div>
+
+        <div class="msg-row stagger-1 fade-in">
+          <div class="msg-bubble msg-user-bubble" style="margin-left:auto">
+            Thể tích bằng 1/3 nhân diện tích đáy nhân chiều cao ạ.
+          </div>
+          <div class="msg-avatar msg-user-avatar">NK</div>
+        </div>
+
+        <div class="msg-row stagger-2 fade-in">
+          <div class="msg-avatar msg-ai-avatar">AI</div>
+          <div class="msg-bubble msg-ai-bubble">
+            Chính xác! V = ⅓ · S<sub>đáy</sub> · h. Vậy trong bài này, <strong>chiều cao h của hình chóp là đoạn nào?</strong> Em nhìn vào hình 3D bên phải và chỉ ra cho thầy nhé.
+          </div>
+        </div>
+
+        <div class="msg-row stagger-3 fade-in">
+          <div class="msg-bubble msg-user-bubble" style="margin-left:auto">
+            Là SA ạ, vì SA vuông góc với mặt đáy.
+          </div>
+          <div class="msg-avatar msg-user-avatar">NK</div>
+        </div>
+
+        <div class="msg-row stagger-4 fade-in">
+          <div class="msg-avatar msg-ai-avatar">AI</div>
+          <div class="msg-bubble msg-ai-bubble msg-highlight">
+            Đúng vậy! SA ⊥ (ABCD) nên SA chính là đường cao. Giờ em đã có đủ dữ kiện — hãy tính <strong>V = ?</strong>
+            <div class="msg-math">V = ⅓ · S_ABCD · SA = ⅓ · ? · ?</div>
+          </div>
+        </div>
+
+        <div class="msg-row fade-in">
+          <div class="msg-avatar msg-ai-avatar">AI</div>
+          <div class="msg-bubble msg-ai-bubble" style="padding:0">
+            <div class="typing-indicator">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-bar">
+        <div class="hint-row">
+          <span class="hint-level-label">Gợi ý:</span>
+          <button class="hint-level-btn current">L0 — Socratic</button>
+          <button class="hint-level-btn">L1 — Hướng dẫn</button>
+          <button class="hint-level-btn">L2 — Gợi ý</button>
+          <button class="hint-level-btn">L3 — Giải mẫu</button>
+        </div>
+        <div class="input-row">
+          <textarea class="msg-input" rows="1" placeholder="Nhập câu trả lời hoặc câu hỏi của em…"></textarea>
+          <button class="send-btn" onclick="go('summary')">
+            <svg viewBox="0 0 16 16" fill="white"><path d="M2 8l10-5-3 5 3 5-10-5z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Viewer side -->
+    <div class="viewer-side">
+      <div class="viewer-topbar">
+        <div class="viewer-title">Hình 3D — Hình chóp S.ABCD</div>
+        <div class="viewer-ctrl-group">
+          <button class="ctrl-chip active">Xoay</button>
+          <button class="ctrl-chip">Cắt ngang</button>
+          <button class="ctrl-chip">Nhãn</button>
+        </div>
+      </div>
+
+      <div class="viewer-canvas">
+        <!-- SVG 3D Pyramid mockup -->
+        <svg width="300" height="260" viewBox="0 0 300 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Face: S-A-B (front left) -->
+          <polygon points="150,30 50,190 150,190" fill="var(--brand-light)" stroke="var(--brand)" stroke-width="1.5" opacity=".6"/>
+          <!-- Face: S-B-C (front right) -->
+          <polygon points="150,30 150,190 220,160" fill="var(--blue-light)" stroke="var(--blue)" stroke-width="1.5" opacity=".6"/>
+          <!-- Face: S-C-D (back right, dashed) -->
+          <polygon points="150,30 220,160 120,160" fill="var(--surface-2)" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="4,3" opacity=".5"/>
+          <!-- Face: S-D-A (back left, dashed) -->
+          <polygon points="150,30 120,160 50,190" fill="var(--surface-2)" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="4,3" opacity=".3"/>
+          <!-- Base ABCD -->
+          <polygon points="50,190 150,190 220,160 120,160" fill="var(--surface-3)" stroke="var(--ink-3)" stroke-width="1.5" opacity=".5"/>
+          <!-- Hidden base edges -->
+          <line x1="120" y1="160" x2="50" y2="190" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="120" y1="160" x2="220" y2="160" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="4,3"/>
+
+          <!-- Altitude SA highlight -->
+          <line x1="50" y1="190" x2="150" y2="30" stroke="var(--brand)" stroke-width="2.5" stroke-dasharray="6,3" opacity=".8"/>
+
+          <!-- Right angle at A -->
+          <path d="M 60 183 L 66 174 L 58 168" stroke="var(--brand)" stroke-width="1.5" fill="none"/>
+
+          <!-- Vertices -->
+          <circle cx="150" cy="30" r="5" fill="var(--brand)" stroke="white" stroke-width="1.5"/>
+          <circle cx="50" cy="190" r="5" fill="var(--brand)" stroke="white" stroke-width="1.5"/>
+          <circle cx="150" cy="190" r="4" fill="var(--ink-2)" stroke="white" stroke-width="1.5"/>
+          <circle cx="220" cy="160" r="4" fill="var(--ink-2)" stroke="white" stroke-width="1.5"/>
+          <circle cx="120" cy="160" r="4" fill="var(--ink-2)" stroke="white" stroke-width="1.5"/>
+
+          <!-- Labels -->
+          <text x="158" y="25" font-size="14" font-weight="600" fill="var(--brand)" font-family="'Playfair Display', serif">S</text>
+          <text x="28" y="196" font-size="14" font-weight="600" fill="var(--brand)" font-family="'Playfair Display', serif">A</text>
+          <text x="154" y="205" font-size="13" fill="var(--ink-2)" font-family="'Playfair Display', serif">B</text>
+          <text x="224" y="158" font-size="13" fill="var(--ink-2)" font-family="'Playfair Display', serif">C</text>
+          <text x="104" y="157" font-size="13" fill="var(--ink-2)" font-family="'Playfair Display', serif">D</text>
+
+          <!-- SA dimension label -->
+          <text x="82" y="108" font-size="11" fill="var(--brand)" font-family="'JetBrains Mono', monospace" font-weight="500">SA=6</text>
+
+          <!-- AB dimension label -->
+          <text x="88" y="205" font-size="11" fill="var(--ink-3)" font-family="'JetBrains Mono', monospace">AB=4</text>
+
+          <!-- Rotate hint -->
+          <text x="97" y="248" font-size="11" fill="var(--ink-4)" font-family="'DM Sans', sans-serif">↺ kéo để xoay hình</text>
+        </svg>
+        <div class="viewer-hint-text">SA được tô màu đỏ — đây là đường cao</div>
+      </div>
+
+      <div class="viewer-info">
+        <div class="info-card">
+          <div class="info-title">Dữ kiện bài toán</div>
+          <div class="info-row"><span class="info-key">Đáy ABCD</span><span class="info-val">Hình vuông, cạnh 4 cm</span></div>
+          <div class="info-row"><span class="info-key">SA</span><span class="info-val highlight">⊥ (ABCD) · SA = 6 cm</span></div>
+          <div class="info-row"><span class="info-key">S_đáy</span><span class="info-val">4² = 16 cm²</span></div>
+          <div class="info-row"><span class="info-key">Chiều cao h</span><span class="info-val highlight">SA = 6 cm ← Tìm thấy!</span></div>
+        </div>
+      </div>
+
+      <div class="progress-panel">
+        <div class="progress-panel-card">
+          <div class="info-title" style="margin-bottom:14px">Tiến trình Socratic</div>
+          <div class="phase-steps">
+            <div class="phase-step done">
+              <div class="phase-dot" style="color:white;font-size:9px">✓</div>
+              <div class="phase-step-name">REVIEW</div>
+            </div>
+            <div class="phase-step active">
+              <div class="phase-dot"></div>
+              <div class="phase-step-name">HEURISTIC</div>
+            </div>
+            <div class="phase-step">
+              <div class="phase-dot"></div>
+              <div class="phase-step-name">RECTIFY</div>
+            </div>
+            <div class="phase-step">
+              <div class="phase-dot"></div>
+              <div class="phase-step-name">SUMMARIZE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN 5 — SUMMARY
+══════════════════════════════════════ -->
+<div class="screen" id="screen-summary">
+  <div class="summary-wrap fade-in">
+    <div class="summary-header">
+      <div class="summary-icon">✓</div>
+      <div class="summary-title">Phiên học hoàn thành!</div>
+      <div class="summary-sub">Hình chóp S.ABCD — Thể tích và đường cao · 18 phút</div>
+    </div>
+
+    <div class="summary-stats">
+      <div class="summary-stat">
+        <div class="summary-stat-val" style="color:var(--green)">18'</div>
+        <div class="summary-stat-lbl">Thời gian học</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-val" style="color:var(--amber)">2</div>
+        <div class="summary-stat-lbl">Gợi ý đã dùng</div>
+      </div>
+      <div class="summary-stat">
+        <div class="summary-stat-val" style="color:var(--blue)">8</div>
+        <div class="summary-stat-lbl">Lượt trao đổi</div>
+      </div>
+    </div>
+
+    <div class="summary-ai-card">
+      <div class="summary-ai-header">
+        <div class="summary-ai-badge">AI</div>
+        <div>
+          <div class="summary-ai-title">Nhận xét của thầy</div>
+          <div class="summary-ai-sub">Tóm tắt phiên học</div>
+        </div>
+      </div>
+      <div class="summary-ai-text">
+        Em đã xác định đúng chiều cao SA và tính được thể tích V = ⅓ · 16 · 6 = <strong>32 cm³</strong> một cách chắc chắn. Phần (a) em làm rất tốt — chỉ cần gợi ý ở bước nhận ra SA là đường cao. Phần (b) về khoảng cách A đến (SBC) em cần ôn thêm về <strong>phương trình mặt phẳng và công thức khoảng cách</strong> — đây là điểm cần chú ý cho bài thi THPT.
+      </div>
+    </div>
+
+    <div class="summary-mastery-change">
+      <div class="mastery-change-icon">📈</div>
+      <div class="mastery-change-text">
+        <div class="mastery-change-title">Hình học không gian đã tăng!</div>
+        <div class="mastery-change-sub">Tiếp tục luyện tập để đạt 60%</div>
+      </div>
+      <div class="mastery-change-delta">38% → 46%</div>
+    </div>
+
+    <div style="margin-bottom:16px">
+      <div class="sec-label" style="margin-bottom:8px">Em cảm thấy thế nào sau phiên này?</div>
+      <div class="rating-row">
+        <div class="star-btn">★</div>
+        <div class="star-btn">★</div>
+        <div class="star-btn">★</div>
+        <div class="star-btn">★</div>
+        <div class="star-btn">★</div>
+        <div class="rating-label" style="margin-left:8px">Chưa chọn</div>
+      </div>
+    </div>
+
+    <div class="summary-next">
+      <div class="summary-next-title">Học tiếp theo gì?</div>
+      <div class="next-topic-card" onclick="go('session')">
+        <div class="next-topic-icon">△</div>
+        <div>
+          <div class="next-topic-name">Khoảng cách điểm đến mặt phẳng</div>
+          <div class="next-topic-desc">Tiếp nối nội dung hôm nay · Hình học KG · Khó</div>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--ink-4)" stroke-width="1.5" style="margin-left:auto;flex-shrink:0"><path d="M5 3l4 4-4 4"/></svg>
+      </div>
+    </div>
+
+    <div class="summary-actions">
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="go('session')">Học tiếp →</button>
+      <button class="btn btn-ghost" onclick="go('dashboard')">Về tổng quan</button>
+      <button class="btn btn-ghost">Xem lại hội thoại</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const screens = ['login','dashboard','topics','session','summary'];
+
+function go(id) {
+  screens.forEach(s => {
+    document.getElementById('screen-'+s).classList.remove('active');
+  });
+  document.querySelectorAll('.dev-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  const idx = screens.indexOf(id);
+  if (idx !== -1) document.querySelectorAll('.dev-btn')[idx].classList.add('active');
+}
+
+// Ctrl chips toggle
+document.querySelectorAll('.ctrl-chip').forEach(chip => {
+  chip.addEventListener('click', function() {
+    document.querySelectorAll('.ctrl-chip').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Hint level buttons
+document.querySelectorAll('.hint-level-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.hint-level-btn').forEach(b => b.classList.remove('current'));
+    this.classList.add('current');
+  });
+});
+
+// Filter chips
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', function() {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Star rating
+const stars = document.querySelectorAll('.star-btn');
+const ratingLabel = document.querySelector('.rating-label');
+const labels = ['','Chưa hiểu','Còn mơ hồ','Hiểu một phần','Hiểu khá rõ','Hiểu rõ hoàn toàn!'];
+stars.forEach((star, i) => {
+  star.addEventListener('click', function() {
+    stars.forEach((s, j) => {
+      s.classList.toggle('active', j <= i);
+      s.style.color = j <= i ? '#f5a623' : '';
+    });
+    ratingLabel.textContent = labels[i+1];
+  });
+});
+
+// Live timer on session screen
+let seconds = 754;
+setInterval(() => {
+  seconds++;
+  const m = String(Math.floor(seconds/60)).padStart(2,'0');
+  const s = String(seconds%60).padStart(2,'0');
+  const el = document.getElementById('timer');
+  if (el) el.textContent = `00:${m}:${s}`;
+}, 1000);
+</script>
+
+</body>
+</html>

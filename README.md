@@ -6,7 +6,7 @@ Full-stack AI application for Grade 12 Vietnamese students using the Socratic me
 
 ```
 toan-socratic/
-├── backend/              # FastAPI backend with Claude AI
+├── backend/              # FastAPI backend with multi-provider AI
 ├── frontend/             # Next.js frontend with Three.js
 ├── docker/               # Docker configurations
 ├── scripts/               # Utility scripts
@@ -54,7 +54,7 @@ npm run dev
 ### Backend
 - **FastAPI** - Modern async web framework
 - **SQLAlchemy** - Async ORM with PostgreSQL
-- **Claude API** - AI model for Socratic dialogue
+- **LiteLLM** - Multi-provider LLM integration (Anthropic, OpenAI, Cohere, Azure, Qwen, Gemini)
 - **PostgreSQL** - Database with pgvector extension
 
 ### Frontend
@@ -106,6 +106,15 @@ railway up
 ## 📊 Project Status
 
 - ✅ Sprint 1: Socratic AI Engine (Complete)
-- 🔄 Sprint 2: Core UI + 3D Viewer + Auth (In Progress)
+- ✅ Sprint 2: Core UI + 3D Viewer + Auth (Complete)
 - ⏳ Sprint 3: Progress, Roles & Polish
 - ⏳ Sprint 4: UX Polish, Testing & Launch Prep
+
+### Sprint 2 Accomplishments
+- ✅ Google OAuth authentication with NextAuth
+- ✅ Server-Sent Events (SSE) streaming for chat
+- ✅ Centralized API client with TypeScript types
+- ✅ React Query integration for state management
+- ✅ 3D geometry viewer with Three.js
+- ✅ Session management with JWT tokens
+- ✅ Route protection with middleware
