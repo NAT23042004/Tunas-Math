@@ -1,9 +1,13 @@
+"use client"
+
+import { signIn } from "next-auth/react"
+
 export default function Login() {
   return (
     <main className="min-h-screen bg-bg flex items-center justify-center p-6">
-      <div className="w-full max-w-[900px] bg-surface rounded-3xl overflow-hidden border border-line shadow-lg">
+      <div className="w-full max-w-[900px] bg-surface rounded-3xl overflow-hidden border border-line shadow-lg flex flex-col md:flex-row">
         {/* Left Side - Branding */}
-        <div className="bg-ink p-16 flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-ink p-16 flex flex-col justify-between relative overflow-hidden md:w-1/2">
           {/* Background Circles */}
           <div className="absolute -top-15 -right-15 w-[260px] h-[260px] bg-brand rounded-full opacity-10"></div>
           <div className="absolute -bottom-10 -left-10 w-[180px] h-[180px] bg-brand rounded-full opacity-10"></div>
@@ -47,11 +51,14 @@ export default function Login() {
         </div>
 
         {/* Right Side - Login Form */}
-        <div className="p-16">
+        <div className="p-16 md:w-1/2">
           <h2 className="font-display text-2xl font-bold mb-2">Đăng nhập</h2>
           <p className="text-sm text-ink-3 mb-8">Chào mừng trở lại! Hãy tiếp tục học.</p>
 
-          <button className="w-full flex items-center justify-center gap-3 p-3 border border-line-2 rounded-lg hover:shadow-sm transition-all">
+          <button
+            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            className="w-full flex items-center justify-center gap-3 p-3 border border-line-2 rounded-lg hover:shadow-sm transition-all"
+          >
             <svg width="20" height="20" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -60,43 +67,6 @@ export default function Login() {
             </svg>
             Tiếp tục với Google
           </button>
-
-          <div className="flex items-center gap-3 my-5 text-ink-4 text-xs">
-            <div className="flex-1 h-px bg-line"></div>
-            <span>hoặc</span>
-            <div className="flex-1 h-px bg-line"></div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1">Email</label>
-              <input
-                type="email"
-                placeholder="ten@email.com"
-                defaultValue="khoa@example.com"
-                className="w-full p-2.5 border border-line-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-light bg-surface"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1">Mật khẩu</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                defaultValue="password"
-                className="w-full p-2.5 border border-line-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-light bg-surface"
-              />
-            </div>
-            <button
-              className="w-full p-3 rounded-lg bg-brand text-white font-semibold text-sm hover:bg-brand-dark transition-colors"
-              onClick={() => window.location.href = '/dashboard'}
-            >
-              Đăng nhập →
-            </button>
-          </div>
-
-          <p className="text-center text-sm text-ink-3 mt-6">
-            Chưa có tài khoản? <a href="#" className="text-brand font-medium">Đăng ký miễn phí</a>
-          </p>
         </div>
       </div>
     </main>
