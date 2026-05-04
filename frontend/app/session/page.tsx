@@ -1,8 +1,8 @@
 import { ChatInterface } from "@/components/ChatInterface";
 
-export default function Home() {
+export default function Session() {
   return (
-    <main className="min-h-screen bg-bg">
+    <main className="min-h-screen bg-surface">
       <ChatInterface />
     </main>
   );
