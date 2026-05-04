@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useCreateSession, useProblems, useSendMessage } from "../lib/useChat";
 import { Message } from "./Message";
 import { LoadingDots } from "./LoadingDots";
 import { GeometryViewer } from "./GeometryViewer";
-import { createSession, getProblems, sendMessageStream } from "../lib/api";
 
 interface MessageType {
   role: "user" | "assistant";
@@ -13,32 +13,28 @@ interface MessageType {
   timestamp: string;
 }
 
-interface SessionState {
-  dialogue_state: string;
-  hint_level: number;
-  fail_count: number;
-}
-
-interface Problem {
-  statement_latex: string;
-  answer: string;
-  is_geometry: boolean;
-  geometry_params?: any;
-  id?: string;
-}
-
 export function ChatInterface() {
-  const { data: session, status } = useSession();
+  const { data: session, status: authStatus } = useSession();
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [sessionState, setSessionState] = useState<SessionState | null>(null);
+  const [sessionState, setSessionState] = useState<{
+    dialogue_state: string;
+    hint_level: number;
+    fail_count: number;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [problem, setProblem] = useState<Problem | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const token = session?.user ? (session as any).accessToken : undefined;
+
+  // Queries and Mutations
+  const createSessionMutation = useCreateSession();
+  const problemsQuery = useProblems("hinh-hoc.hinh-chop", token);
+  const sendMessageMutation = useSendMessage();
+
+  const problem = problemsQuery.data?.[0] || null;
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -47,45 +43,32 @@ export function ChatInterface() {
 
   // Initialize session
   useEffect(() => {
-    if (status === "loading") return;
-    if (status === "unauthenticated") {
+    if (authStatus === "loading") return;
+    if (authStatus === "unauthenticated") {
       window.location.href = "/login";
       return;
     }
-    if (!session?.user?.id) return;
+    if (!session?.user?.id || sessionId) return;
 
     const initSession = async () => {
       try {
-        const data = await createSession(
-          {
-            user_id: session.user.id,
-            topic_id: "hinh-hoc.hinh-chop",
-            problem_id: undefined,
-          },
-          token
-        );
+        const data = await createSessionMutation.mutateAsync({
+          userId: session.user.id,
+          topicId: "hinh-hoc.hinh-chop",
+          token,
+        });
         setSessionId(data.id);
         setSessionState({
           dialogue_state: data.dialogue_state,
           hint_level: data.hint_level,
           fail_count: data.fail_count,
         });
-
-        // Fetch a sample problem
-        const problems = await getProblems(
-          { topic_id: "hinh-hoc.hinh-chop", limit: 1 },
-          token
-        );
-        if (problems.length > 0) {
-          setProblem(problems[0]);
-        }
       } catch (err: any) {
         setError(err.message || "Failed to initialize session");
-        console.error(err);
       }
     };
     initSession();
-  }, [session?.user?.id, status]);
+  }, [session?.user?.id, authStatus]);
 
   const sendMessage = async () => {
     if (!input.trim() || !sessionId || isLoading) return;
@@ -110,16 +93,13 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, assistantMessage]);
 
     try {
-      await sendMessageStream(
+      await sendMessageMutation.mutateAsync({
         sessionId,
-        {
-          content: input,
-          hint_requested: false,
-        },
+        content: input,
+        hintRequested: false,
         token,
-        (content, done, sessionState) => {
+        onChunk: (content, done, sessionStateData) => {
           if (content) {
-            // Update the last message with new content
             setMessages((prev) => {
               const updated = [...prev];
               const lastMsg = updated[updated.length - 1];
@@ -134,15 +114,14 @@ export function ChatInterface() {
           }
           if (done) {
             setIsLoading(false);
-            if (sessionState) {
-              setSessionState(sessionState);
+            if (sessionStateData) {
+              setSessionState(sessionStateData);
             }
           }
-        }
-      );
+        },
+      });
     } catch (err: any) {
       setError(err.message || "Failed to send message");
-      console.error(err);
       setIsLoading(false);
     }
   };
@@ -162,14 +141,12 @@ export function ChatInterface() {
     setMessages((prev) => [...prev, assistantMessage]);
 
     try {
-      await sendMessageStream(
+      await sendMessageMutation.mutateAsync({
         sessionId,
-        {
-          content: `Em cần gợi ý cấp độ ${level}`,
-          hint_requested: true,
-        },
+        content: `Em cần gợi ý cấp độ ${level}`,
+        hintRequested: true,
         token,
-        (content, done, sessionState) => {
+        onChunk: (content, done, sessionStateData) => {
           if (content) {
             setMessages((prev) => {
               const updated = [...prev];
@@ -185,15 +162,14 @@ export function ChatInterface() {
           }
           if (done) {
             setIsLoading(false);
-            if (sessionState) {
-              setSessionState(sessionState);
+            if (sessionStateData) {
+              setSessionState(sessionStateData);
             }
           }
-        }
-      );
+        },
+      });
     } catch (err: any) {
       setError(err.message || "Failed to request hint");
-      console.error(err);
       setIsLoading(false);
     }
   };
@@ -207,11 +183,16 @@ export function ChatInterface() {
 
   const getPhaseColor = (state: string) => {
     switch (state) {
-      case "review": return "bg-brand-light text-brand";
-      case "heuristic": return "bg-blue-light text-blue";
-      case "rectify": return "bg-amber-light text-amber";
-      case "summarize": return "bg-green-light text-green";
-      default: return "bg-surface-2 text-ink-2";
+      case "review":
+        return "bg-brand-light text-brand";
+      case "heuristic":
+        return "bg-blue-light text-blue";
+      case "rectify":
+        return "bg-amber-light text-amber";
+      case "summarize":
+        return "bg-green-light text-green";
+      default:
+        return "bg-surface-2 text-ink-2";
     }
   };
 
@@ -228,13 +209,13 @@ export function ChatInterface() {
             {problem ? "Hình chóp" : "Đang tải..."}
           </span>
           {sessionState && (
-            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getPhaseColor(sessionState.dialogue_state)}`}>
+            <span
+              className={`text-xs font-semibold px-3 py-1 rounded-full ${getPhaseColor(sessionState.dialogue_state)}`}
+            >
               {sessionState.dialogue_state.toUpperCase()}
             </span>
           )}
-          <div className="ml-auto font-mono text-xs text-ink-4">
-            00:12:34
-          </div>
+          <div className="ml-auto font-mono text-xs text-ink-4">00:12:34</div>
         </div>
 
         {/* Problem Statement */}
@@ -313,7 +294,10 @@ export function ChatInterface() {
       <div className="w-[380px] flex flex-col bg-bg">
         <div className="p-4 border-b border-line bg-surface flex items-center gap-2">
           <span className="text-sm font-medium flex-1">
-            Hình 3D - {problem?.geometry_params?.solid_type === "pyramid" ? "Hình chóp" : "Hình học"}
+            Hình 3D -{" "}
+            {problem?.geometry_params?.solid_type === "pyramid"
+              ? "Hình chóp"
+              : "Hình học"}
           </span>
           <button className="text-[10px] px-3 py-1 rounded-full border border-line-2 hover:bg-surface-2">
             Xoay
@@ -334,9 +318,7 @@ export function ChatInterface() {
             <div className="flex-1 flex items-center justify-center p-4">
               <div className="text-center">
                 <div className="text-4xl mb-2">📐</div>
-                <p className="text-xs text-ink-4">
-                  Bài toán không có hình học
-                </p>
+                <p className="text-xs text-ink-4">Bài toán không có hình học</p>
               </div>
             </div>
           )}
@@ -345,7 +327,9 @@ export function ChatInterface() {
         {/* Info Panel */}
         <div className="p-4 border-t border-line space-y-3">
           <div className="bg-surface border border-line rounded-xl p-4">
-            <div className="text-xs font-semibold mb-3 text-ink">Thông tin bài toán</div>
+            <div className="text-xs font-semibold mb-3 text-ink">
+              Thông tin bài toán
+            </div>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between">
                 <span className="text-ink-3">Loại</span>
@@ -360,22 +344,53 @@ export function ChatInterface() {
 
           {/* Phase Progress */}
           <div className="bg-surface border border-line rounded-xl p-4">
-            <div className="text-xs font-semibold mb-3 text-ink">Tiến trình Socratic</div>
+            <div className="text-xs font-semibold mb-3 text-ink">
+              Tiến trình Socratic
+            </div>
             <div className="flex gap-0">
-              {["REVIEW", "HEURISTIC", "RECTIFY", "SUMMARIZE"].map((phase, idx) => (
-                <div key={phase} className="flex-1 text-center relative pb-2">
-                  <div className={`w-5 h-5 rounded-full mx-auto mb-1 flex items-center justify-center text-[10px] ${
-                    sessionState?.dialogue_state.toUpperCase() === phase
-                      ? "bg-blue text-white"
-                      : idx < (sessionState ? ["REVIEW", "HEURISTIC", "RECTIFY", "SUMMARIZE"].indexOf(sessionState.dialogue_state.toUpperCase()) : 0)
-                      ? "bg-green text-white"
-                      : "bg-surface-3"
-                  }`}>
-                    {idx < (sessionState ? ["REVIEW", "HEURISTIC", "RECTIFY", "SUMMARIZE"].indexOf(sessionState.dialogue_state.toUpperCase()) : 0) ? "✓" : ""}
+              {["REVIEW", "HEURISTIC", "RECTIFY", "SUMMARIZE"].map(
+                (phase, idx) => (
+                  <div
+                    key={phase}
+                    className="flex-1 text-center relative pb-2"
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full mx-auto mb-1 flex items-center justify-center text-[10px] ${
+                        sessionState?.dialogue_state.toUpperCase() === phase
+                          ? "bg-blue text-white"
+                          : idx <
+                            (sessionState
+                              ? [
+                                  "REVIEW",
+                                  "HEURISTIC",
+                                  "RECTIFY",
+                                  "SUMMARIZE",
+                                ].indexOf(
+                                  sessionState.dialogue_state.toUpperCase()
+                                )
+                              : 0)
+                          ? "bg-green text-white"
+                          : "bg-surface-3"
+                      }`}
+                    >
+                      {idx <
+                      (sessionState
+                        ? [
+                            "REVIEW",
+                            "HEURISTIC",
+                            "RECTIFY",
+                            "SUMMARIZE",
+                          ].indexOf(
+                            sessionState.dialogue_state.toUpperCase()
+                          )
+                        : 0)
+                        ? "✓"
+                        : ""}
+                    </div>
+                    <div className="text-[10px] text-ink-4">{phase}</div>
                   </div>
-                  <div className="text-[10px] text-ink-4">{phase}</div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           </div>
         </div>
