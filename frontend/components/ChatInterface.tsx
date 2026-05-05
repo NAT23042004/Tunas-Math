@@ -50,10 +50,12 @@ export function ChatInterface() {
     }
     if (!session?.user?.id || sessionId) return;
 
+    const userId = session.user.id;
+
     const initSession = async () => {
       try {
         const data = await createSessionMutation.mutateAsync({
-          userId: session.user.id,
+          userId,
           topicId: "hinh-hoc.hinh-chop",
           token,
         });

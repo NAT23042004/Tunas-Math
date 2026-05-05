@@ -1,5 +1,18 @@
 import NextAuth from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
+import type { Session } from "next-auth"
+import type { JWT } from "next-auth/jwt"
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      name?: string | null
+      email?: string | null
+      image?: string | null
+      id?: string
+    }
+  }
+}
 
 const handler = NextAuth({
   providers: [
@@ -24,7 +37,7 @@ const handler = NextAuth({
     },
     async jwt({ token, user }) {
       if (user) {
-        token.sub = user.id
+        token.sub = (user as any).id
       }
       return token
     },
