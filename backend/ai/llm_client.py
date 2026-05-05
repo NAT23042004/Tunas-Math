@@ -82,7 +82,7 @@ class LLMClient:
 
             # Stream response
             response = await acompletion(
-                model_name=model_name,
+                model=model_name,
                 messages=litellm_messages,
                 tools=tools,
                 max_tokens=max_tokens,
@@ -126,7 +126,7 @@ class LLMClient:
                 litellm_messages.insert(0, {"role": "system", "content": system_prompt})
 
             response = await acompletion(
-                model_name=model_name,
+                model=model_name,
                 messages=litellm_messages,
                 tools=tools,
                 max_tokens=max_tokens,
@@ -165,7 +165,7 @@ class LLMClient:
                 litellm_messages.insert(0, {"role": "system", "content": system_prompt})
 
             response = await acompletion(
-                model_name=model_name,
+                model=model_name,
                 messages=litellm_messages,
                 tools=tools,
                 max_tokens=max_tokens,

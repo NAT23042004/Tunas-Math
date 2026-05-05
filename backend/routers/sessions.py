@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm.attributes import flag_modified
 from uuid import UUID
 from datetime import datetime, timezone
 import json
@@ -92,6 +93,7 @@ async def send_message(
         "timestamp": datetime.utcnow().isoformat()
     }
     session.messages.append(user_message)
+    flag_modified(session, "messages")
 
     # Get problem context if available
     problem_context = None
@@ -170,6 +172,7 @@ async def send_message(
                 "tool_calls": response.get("tool_calls", [])
             }
             session.messages.append(ai_message)
+            flag_modified(session, "messages")
 
             # Update session state
             if message_data.hint_requested:
@@ -221,6 +224,7 @@ async def stream_response(llm_messages, system_prompt, tools, session, message_d
                 "tool_calls": []
             }
             session.messages.append(ai_message)
+            flag_modified(session, "messages")
 
             # Update session state
             if message_data.hint_requested:
