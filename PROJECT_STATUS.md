@@ -224,9 +224,10 @@ toan-socratic/
 ### **Immediate Next Steps (Sprint 2)**
 - ✅ Complete frontend UI components
 - ✅ Implement 3D geometry viewer with Three.js
-- ✅ Add Google OAuth authentication
+- ⏳ Configure Google OAuth credentials (get from Google Cloud Console)
 - ✅ Create chat interface with streaming
 - ✅ Integrate frontend with backend API
+- ⏳ End-to-end testing (frontend ↔ backend ↔ LLM)
 
 ### **Database Setup**
 - ✅ Run actual PostgreSQL initialization
@@ -235,15 +236,16 @@ toan-socratic/
 - ✅ Load sample problems database
 
 ### **Integration Testing**
-- ⏳ Test with real Claude API key
-- ⏳ End-to-end session flow testing
+- ✅ LLM API connection verified (OpenAI gpt-4o-mini)
+- ⏳ End-to-end session flow testing (frontend ↔ backend ↔ LLM)
 - ⏳ Geometry tool integration verification
 
 ### **Testing & Deployment**
-- ⏳ Test with real Claude API key
-- ⏳ End-to-end session flow testing
-- ⏳ Geometry tool integration verification
+- ✅ Backend API working (session create, message send, streaming)
+- ✅ Frontend build successful (Next.js 14)
+- ⏳ End-to-end browser testing
 - ⏳ Add unit tests for frontend components
+- ⏳ Configure Google OAuth credentials
 - ⏳ Deploy to production (Vercel + Railway)
 
 ### **Build Status**
