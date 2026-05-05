@@ -39,7 +39,7 @@ async def create_session(
         hint_count=0,
         fail_count=0,
         messages=[],
-        started_at=datetime.now(timezone.utc)
+        started_at=datetime.utcnow()
     )
 
     db.add(new_session)
@@ -89,7 +89,7 @@ async def send_message(
     user_message = {
         "role": "user",
         "content": message_data.content,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.utcnow().isoformat()
     }
     session.messages.append(user_message)
 
@@ -166,7 +166,7 @@ async def send_message(
             ai_message = {
                 "role": "assistant",
                 "content": response["text"],
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.utcnow().isoformat(),
                 "tool_calls": response.get("tool_calls", [])
             }
             session.messages.append(ai_message)
@@ -217,7 +217,7 @@ async def stream_response(llm_messages, system_prompt, tools, session, message_d
             ai_message = {
                 "role": "assistant",
                 "content": full_response,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.utcnow().isoformat(),
                 "tool_calls": []
             }
             session.messages.append(ai_message)
@@ -268,7 +268,7 @@ async def complete_session(
 
     # Update session
     session.status = SessionStatus.COMPLETED
-    session.ended_at = datetime.now(timezone.utc)
+    session.ended_at = datetime.utcnow()
     session.student_rating = completion_data.student_rating
 
     # Generate summary (simplified for now)

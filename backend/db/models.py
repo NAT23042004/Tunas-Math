@@ -5,7 +5,8 @@ from datetime import datetime
 import uuid
 import enum
 
-from db.compatibility import UUID, JSONB, Vector
+from db.compatibility import UUID, JSONB
+from sqlalchemy import Text as Vector  # Placeholder for Vector type
 
 
 Base = declarative_base()
@@ -63,7 +64,7 @@ class Problem(Base):
     geometry_params = Column(JSONB, nullable=True)
     source = Column(String, nullable=True)
     misconceptions = Column(JSONB, nullable=True)
-    embedding = Column(Vector, nullable=True)
+    # embedding = Column(Vector, nullable=True)  # Requires pgvector extension
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Relationships
@@ -85,7 +86,7 @@ class Session(Base):
     messages = Column(JSONB, nullable=False, default=list)
     summary = Column(Text, nullable=True)
     student_rating = Column(Integer, nullable=True)
-    started_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, default=lambda: datetime.utcnow().replace(tzinfo=None))
     ended_at = Column(DateTime, nullable=True)
 
     # Relationships
