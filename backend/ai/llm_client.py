@@ -88,6 +88,7 @@ class LLMClient:
                 max_tokens=max_tokens,
                 api_key=self.api_key,
                 stream=True,
+                timeout=settings.llm_timeout,
             )
 
             async for chunk in response:
@@ -131,6 +132,7 @@ class LLMClient:
                 tools=tools,
                 max_tokens=max_tokens,
                 api_key=self.api_key,
+                timeout=settings.llm_timeout,
             )
 
             # Extract text from response
@@ -170,6 +172,7 @@ class LLMClient:
                 tools=tools,
                 max_tokens=max_tokens,
                 api_key=self.api_key,
+                timeout=settings.llm_timeout,
             )
 
             result = {"text": "", "tool_calls": []}
