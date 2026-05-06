@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     llm_api_key: Optional[str] = None  # Generic API key (optional, falls back to provider-specific keys)
     llm_temperature: float = 0.7
     llm_max_tokens: int = 1024
+    llm_timeout: int = 60  # Timeout in seconds for LLM API calls (default 60s, LiteLLM default is 120s)
 
     # Provider-specific API keys (optional, used if llm_api_key not set)
     anthropic_api_key: Optional[str] = None
