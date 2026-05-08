@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react"
 
 export default function Login() {
   return (
-    <main className="min-h-screen bg-bg flex items-center justify-center p-6">
+    <main className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-[900px] bg-surface rounded-3xl overflow-hidden border border-line shadow-lg flex flex-col md:flex-row">
         {/* Left Side - Branding */}
         <div className="bg-ink p-16 flex flex-col justify-between relative overflow-hidden md:w-1/2">

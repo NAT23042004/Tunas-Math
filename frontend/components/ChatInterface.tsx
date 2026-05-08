@@ -27,7 +27,7 @@ export function ChatInterface() {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const token = session?.user ? (session as any).accessToken : undefined;
+  const token = session?.user?.id ? session.user.id : undefined;
 
   // Queries and Mutations
   const createSessionMutation = useCreateSession();
@@ -186,15 +186,15 @@ export function ChatInterface() {
   const getPhaseColor = (state: string) => {
     switch (state) {
       case "review":
-        return "bg-brand-light text-brand";
+        return "bg-blue-50 text-blue-600";
       case "heuristic":
-        return "bg-blue-light text-blue";
+        return "bg-purple-50 text-purple-600";
       case "rectify":
-        return "bg-amber-light text-amber";
+        return "bg-amber-50 text-amber-600";
       case "summarize":
-        return "bg-green-light text-green";
+        return "bg-green-50 text-green-600";
       default:
-        return "bg-surface-2 text-ink-2";
+        return "bg-gray-50 text-gray-600";
     }
   };
 
@@ -212,7 +212,13 @@ export function ChatInterface() {
           </span>
           {sessionState && (
             <span
-              className={`text-xs font-semibold px-3 py-1 rounded-full ${getPhaseColor(sessionState.dialogue_state)}`}
+              className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                sessionState.dialogue_state === 'review' ? 'bg-blue-50 text-blue-600' :
+                sessionState.dialogue_state === 'heuristic' ? 'bg-purple-50 text-purple-600' :
+                sessionState.dialogue_state === 'rectify' ? 'bg-amber-50 text-amber-600' :
+                sessionState.dialogue_state === 'summarize' ? 'bg-green-50 text-green-600' :
+                'bg-gray-50 text-gray-600'
+              }`}
             >
               {sessionState.dialogue_state.toUpperCase()}
             </span>
@@ -222,7 +228,7 @@ export function ChatInterface() {
 
         {/* Problem Statement */}
         {problem && (
-          <div className="p-4 border-b border-line bg-bg">
+          <div className="p-4 border-b border-line bg-surface">
             <div className="text-[10px] font-medium uppercase tracking-wider text-ink-4 mb-2">
               Đề bài
             </div>
@@ -261,8 +267,8 @@ export function ChatInterface() {
                 onClick={() => requestHint(level)}
                 className={`text-[10px] px-3 py-1 rounded-full border transition-all ${
                   sessionState?.hint_level === level
-                    ? "bg-amber-light text-amber border-amber font-medium"
-                    : "border-line-2 text-ink-3 hover:border-amber hover:text-amber"
+                    ? "bg-amber-50 text-amber-600 border-amber-300 font-medium"
+                    : "border-gray-200 text-gray-500 hover:border-amber-300 hover:text-amber-600"
                 }`}
               >
                 L{level}
@@ -293,7 +299,7 @@ export function ChatInterface() {
       </div>
 
       {/* Viewer Section - 3D Geometry */}
-      <div className="w-[380px] flex flex-col bg-bg">
+      <div className="w-[380px] flex flex-col bg-surface">
         <div className="p-4 border-b border-line bg-surface flex items-center gap-2">
           <span className="text-sm font-medium flex-1">
             Hình 3D -{" "}
@@ -319,7 +325,11 @@ export function ChatInterface() {
           ) : (
             <div className="flex-1 flex items-center justify-center p-4">
               <div className="text-center">
-                <div className="text-4xl mb-2">📐</div>
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-ink-4 mb-2 mx-auto">
+                  <path d="M8 40L24 8l16 32"/>
+                  <path d="M14 32h20"/>
+                  <path d="M18 24h12"/>
+                </svg>
                 <p className="text-xs text-ink-4">Bài toán không có hình học</p>
               </div>
             </div>
@@ -359,7 +369,7 @@ export function ChatInterface() {
                     <div
                       className={`w-5 h-5 rounded-full mx-auto mb-1 flex items-center justify-center text-[10px] ${
                         sessionState?.dialogue_state.toUpperCase() === phase
-                          ? "bg-blue text-white"
+                          ? "bg-blue-500 text-white"
                           : idx <
                             (sessionState
                               ? [
@@ -371,8 +381,8 @@ export function ChatInterface() {
                                   sessionState.dialogue_state.toUpperCase()
                                 )
                               : 0)
-                          ? "bg-green text-white"
-                          : "bg-surface-3"
+                          ? "bg-green-500 text-white"
+                          : "bg-gray-200"
                       }`}
                     >
                       {idx <
@@ -385,9 +395,11 @@ export function ChatInterface() {
                           ].indexOf(
                             sessionState.dialogue_state.toUpperCase()
                           )
-                        : 0)
-                        ? "✓"
-                        : ""}
+                        : 0) ? (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M2 6l3 3 5-5"/>
+                        </svg>
+                      ) : null}
                     </div>
                     <div className="text-[10px] text-ink-4">{phase}</div>
                   </div>

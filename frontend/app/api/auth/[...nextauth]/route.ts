@@ -30,14 +30,37 @@ const handler = NextAuth({
   },
   callbacks: {
     async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub
+      if (session.user && token.backendUserId) {
+        session.user.id = token.backendUserId as string
+        console.log('Session callback: set user.id to', token.backendUserId)
+      } else {
+        console.log('Session callback: backendUserId not found in token', token)
       }
       return session
     },
-    async jwt({ token, user }) {
-      if (user) {
-        token.sub = (user as any).id
+    async jwt({ token, user, account }) {
+      if (account && user?.email) {
+        try {
+          console.log('JWT callback: creating/getting user in backend', user.email)
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+          const response = await fetch(`${apiUrl}/api/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name || '',
+            }),
+          })
+          if (response.ok) {
+            const backendUser = await response.json()
+            token.backendUserId = backendUser.id
+            console.log('JWT callback: stored backendUserId', backendUser.id)
+          } else {
+            console.error('JWT callback: failed to create/get user', response.status)
+          }
+        } catch (error) {
+          console.error('JWT callback: error creating/getting user:', error)
+        }
       }
       return token
     },
