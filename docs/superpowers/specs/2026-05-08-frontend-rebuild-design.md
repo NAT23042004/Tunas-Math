@@ -29,7 +29,7 @@ Dependencies match the existing `package.json` — reinstalled via `create-next-
 
 ```
 frontend/app/
-├── layout.tsx                    # Root: fonts, auth provider, Sentry
+├── layout.tsx                    # Root: fonts, auth provider
 ├── page.tsx                      # Landing (redirect to /dashboard if logged in)
 │
 ├── (auth)/
