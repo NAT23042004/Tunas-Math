@@ -43,6 +43,17 @@ export async function checkHealth(): Promise<HealthResponse> {
   return request<HealthResponse>("/health")
 }
 
+// Users
+export async function createUser(
+  data: { email: string; name: string },
+  token?: string
+): Promise<{ id: string; email: string; name: string }> {
+  return request<{ id: string; email: string; name: string }>("/api/users", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }, token)
+}
+
 // Problems
 export async function getProblems(
   params?: {
@@ -129,59 +140,14 @@ export async function sendMessageStream(
   token?: string,
   onChunk?: (content: string, done: boolean, sessionState?: any) => void
 ): Promise<void> {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  }
+  // Use non-streaming endpoint since backend returns JSON
+  const response = await sendMessage(sessionId, data, token);
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-
-  const res = await fetch(
-    `${API_URL}/api/sessions/${sessionId}/message?stream=true`,
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify(data),
-    }
-  )
-
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(error.detail || `HTTP ${res.status}`)
-  }
-
-  const reader = res.body?.getReader()
-  const decoder = new TextDecoder()
-
-  if (!reader) throw new Error("No readable stream available")
-
-  let buffer = ""
-
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-
-    buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split("\n")
-
-    // Keep the last potentially incomplete line
-    buffer = lines.pop() || ""
-
-    for (const line of lines) {
-      if (line.startsWith("data: ")) {
-        try {
-          const data = JSON.parse(line.slice(6))
-          if (data.error) throw new Error(data.error)
-          if (onChunk) {
-            onChunk(data.content || "", data.done || false, data.session_state)
-          }
-        } catch (e) {
-          console.error("Error parsing SSE data:", e)
-        }
-      }
-    }
+  if (onChunk) {
+    // Send the content as one chunk
+    onChunk(response.message.content, false, undefined);
+    // Signal completion with session state
+    onChunk("", true, response.session_state);
   }
 }
 

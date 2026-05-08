@@ -1,75 +1,36 @@
 "use client";
 
 import Link from "next/link";
-
-const topics = [
-  {
-    id: 1,
-    name: "Giải tích",
-    icon: "∫",
-    mastery: 72,
-    color: "green",
-    chapters: "5 chương · 42 bài tập",
-    desc: "Đạo hàm, tích phân",
-    has3D: false,
-  },
-  {
-    id: 2,
-    name: "Hình học không gian",
-    icon: "△",
-    mastery: 38,
-    color: "brand",
-    chapters: "4 chương · 38 bài tập",
-    desc: "Hình chóp, lăng trụ, cầu",
-    has3D: true,
-    weak: true,
-  },
-  {
-    id: 3,
-    name: "Xác suất & Thống kê",
-    icon: "P",
-    mastery: 55,
-    color: "blue",
-    chapters: "3 chương · 28 bài tập",
-    desc: "Tổ hợp, xác suất",
-    has3D: false,
-  },
-  {
-    id: 4,
-    name: "Hàm số & Đại số",
-    icon: "f(x)",
-    mastery: 81,
-    color: "green",
-    chapters: "4 chương · 36 bài tập",
-    desc: "Đồ thị, phương trình",
-    has3D: false,
-  },
-  {
-    id: 5,
-    name: "Lượng giác",
-    icon: "sin",
-    mastery: 44,
-    color: "amber",
-    chapters: "3 chương · 24 bài tập",
-    desc: "Hàm, phương trình",
-    has3D: false,
-  },
-  {
-    id: 6,
-    name: "Số phức",
-    icon: "ℂ",
-    mastery: 0,
-    color: "ink-3",
-    chapters: "2 chương · 18 bài tập",
-    desc: "Chưa bắt đầu",
-    has3D: false,
-    locked: true,
-  },
-];
+import { useTopics } from "@/lib/useTopics";
+import { LoadingDots } from "@/components/LoadingDots";
 
 export default function Topics() {
+  const { topics, isLoading, isError, error } = useTopics();
+
+  if (isLoading) {
+    return (
+      <main className="min-h-screen">
+        <div className="fixed left-0 top-0 h-screen w-[220px] bg-surface border-r border-line" />
+        <div className="ml-[220px] p-8 flex items-center justify-center">
+          <LoadingDots />
+        </div>
+      </main>
+    );
+  }
+
+  if (isError) {
+    return (
+      <main className="min-h-screen">
+        <div className="fixed left-0 top-0 h-screen w-[220px] bg-surface border-r border-line" />
+        <div className="ml-[220px] p-8 flex items-center justify-center">
+          <div className="text-red-600 text-sm">Lỗi tải dữ liệu: {error?.message}</div>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-bg">
+    <main className="min-h-screen">
       {/* Sidebar */}
       <div className="fixed left-0 top-0 h-screen w-[220px] bg-surface border-r border-line flex flex-col">
         <div className="p-5 border-b border-line">
@@ -149,25 +110,12 @@ export default function Topics() {
             <p className="text-ink-3">Chọn chủ đề để bắt đầu phiên Socratic. Ưu tiên chủ đề còn yếu.</p>
           </div>
 
-          {/* Search and Filters */}
-          <div className="flex gap-3 items-center mb-8">
-            <input
-              type="text"
-              placeholder="Tìm kiếm: hình chóp, tích phân, xác suất…"
-              className="flex-1 px-4 py-3 border border-line-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-light bg-surface"
-            />
-            <button className="filter-chip active">Tất cả</button>
-            <button className="filter-chip">Còn yếu</button>
-            <button className="filter-chip">Có 3D</button>
-            <button className="filter-chip">Khó</button>
-          </div>
-
           {/* Topics Grid */}
           <div className="grid grid-cols-3 gap-4">
             {topics.map((topic) => (
               <div
                 key={topic.id}
-                className={`topic-card ${topic.weak ? 'weak' : ''} ${topic.locked ? 'opacity-55' : 'cursor-pointer hover:border-brand transition-colors'}`}
+                className={`topic-card ${topic.locked ? 'opacity-55' : 'cursor-pointer hover:border-brand transition-colors'}`}
                 onClick={() => !topic.locked && (window.location.href = '/session')}
               >
                 <div className="topic-card-accent" style={{ backgroundColor: `var(--${topic.color})` }}></div>
@@ -202,8 +150,19 @@ export default function Topics() {
                   <div className="topic-mastery-pct">{topic.mastery}%</div>
                 </div>
                 <div className="topic-footer">
-                  <span className="text-[10px]" style={{ color: topic.has3D ? 'var(--brand)' : 'var(--ink-3)' }}>
-                    {topic.has3D ? '🔷 Có 3D' : 'Không có 3D'}
+                  <span className="text-[10px] flex items-center gap-1" style={{ color: topic.has3D ? 'var(--brand)' : 'var(--ink-3)' }}>
+                    {topic.has3D ? (
+                      <>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                          <rect x="1" y="1" width="10" height="10" rx="1" stroke="currentColor" strokeWidth="1" fill="none"/>
+                          <path d="M1 6h10" stroke="currentColor" strokeWidth="0.5"/>
+                          <path d="M6 1v10" stroke="currentColor" strokeWidth="0.5"/>
+                        </svg>
+                        Có 3D
+                      </>
+                    ) : (
+                      'Không có 3D'
+                    )}
                   </span>
                   <button
                     className="topic-cta"
@@ -217,6 +176,11 @@ export default function Topics() {
                 </div>
               </div>
             ))}
+            {topics.length === 0 && (
+              <div className="col-span-3 text-center text-ink-3 text-sm py-8">
+                Chưa có chủ đề nào. Hãy liên hệ quản trị viên.
+              </div>
+            )}
           </div>
         </div>
       </div>
