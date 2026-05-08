@@ -3,7 +3,7 @@
 import React from 'react';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
-import type { Message } from '@/types';
+import type { Message, SolidSpec } from '@/types';
 import GeometryViewer from './GeometryViewer';
 
 interface MessageBubbleProps {
@@ -29,7 +29,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
       <div className={`max-w-[80%] rounded-lg px-4 py-2 ${isUser ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'}`}>
         {message.tool_call?.name === 'render_geometry' ? (
-          <GeometryViewer solidSpec={message.tool_call.input as Record<string, unknown>} height={300} />
+          <GeometryViewer solidSpec={message.tool_call.input as unknown as SolidSpec} height={300} />
         ) : (
           <div className="text-sm">{renderContent(message.content)}</div>
         )}

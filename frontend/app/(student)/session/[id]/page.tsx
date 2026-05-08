@@ -18,8 +18,8 @@ export default function SessionPage() {
   useEffect(() => {
     setSession(sessionId);
     getSessionHistory(sessionId).then((data) => {
-      if (data.messages) {
-        data.messages.forEach((msg: Message) => addMessage(msg));
+      if (data.messages && Array.isArray(data.messages)) {
+        (data.messages as Message[]).forEach((msg) => addMessage(msg));
       }
     });
   }, [sessionId, setSession, addMessage]);
@@ -60,7 +60,7 @@ export default function SessionPage() {
     }
 
     const assistantMsg: Message = { role: 'assistant', content: streamingText, timestamp: new Date().toISOString() };
-    if (streamingToolUse) (assistantMsg as Record<string, unknown>).tool_call = { name: 'render_geometry', input: streamingToolUse };
+    if (streamingToolUse) (assistantMsg as unknown as Record<string, unknown>).tool_call = { name: 'render_geometry', input: streamingToolUse };
     addMessage(assistantMsg);
     setStreamingText('');
     setStreamingToolUse(null);
