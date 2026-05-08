@@ -3,9 +3,10 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
+import type { SolidSpec } from '@/types';
 
 interface GeometryViewerProps {
-  solidSpec: { solid_type: string; params: Record<string, unknown>; highlights?: string[]; animated?: boolean };
+  solidSpec: SolidSpec;
   width?: number;
   height?: number;
 }
@@ -55,7 +56,7 @@ function VertexLabel({ position, label }: { position: [number, number, number]; 
 }
 
 export default function GeometryViewer({ solidSpec, width = 400, height = 300 }: GeometryViewerProps) {
-  const { solid_type, params, highlights } = solidSpec;
+  const { solid_type, params } = solidSpec;
 
   if (solid_type !== 'pyramid') {
     return <div className="flex items-center justify-center h-full text-gray-500">Geometry type not yet supported: {solid_type}</div>;
@@ -77,10 +78,10 @@ export default function GeometryViewer({ solidSpec, width = 400, height = 300 }:
         <VertexLabel position={[baseSide / 2, 0, -baseSide / 2]} label={baseLabels[1]} />
         <VertexLabel position={[baseSide / 2, 0, baseSide / 2]} label={baseLabels[2]} />
         <VertexLabel position={[-baseSide / 2, 0, baseSide / 2]} label={baseLabels[3]} />
-        {params.show_altitude && (
+        {(params.show_altitude as boolean) && (
           <lineSegments>
             <bufferGeometry>
-              <float32BufferAttribute attach="attributes-position" args={[[0, pyramidHeight, 0, 0, 0, 0]]} count={2} itemSize={3} />
+              <float32BufferAttribute attach="attributes-position" args={[[0, pyramidHeight, 0, 0, 0, 0], 3]} count={2} itemSize={3} />
             </bufferGeometry>
             <lineDashedMaterial color="red" dashSize={0.2} gapSize={0.1} />
           </lineSegments>
