@@ -1,15 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { createSession } from '@/lib/api';
 
 export default function NewSessionPage() {
   const [topicId, setTopicId] = useState('hinh-hoc.hinh-chop');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    // Store user_id in localStorage when session is available
+    if (session?.user) {
+      const userId = (session.user as unknown as Record<string, unknown>).userId as string;
+      if (userId) {
+        localStorage.setItem('userId', userId);
+      }
+    }
+  }, [session]);
 
   const handleStart = async () => {
+    if (!session?.user) {
+      alert('Vui lòng đăng nhập trước');
+      router.push('/login');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await createSession({ topic_id: topicId });
@@ -20,6 +38,24 @@ export default function NewSessionPage() {
       setIsLoading(false);
     }
   };
+
+  if (status === 'loading') {
+    return <div className="p-8">Đang tải...</div>;
+  }
+
+  if (status === 'unauthenticated') {
+    return (
+      <div className="p-8">
+        <p className="mb-4">Vui lòng đăng nhập để bắt đầu phiên học</p>
+        <button
+          onClick={() => router.push('/login')}
+          className="rounded bg-blue-600 px-4 py-2 text-white"
+        >
+          Đăng nhập
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">

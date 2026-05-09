@@ -18,7 +18,21 @@ api.interceptors.request.use((config) => {
 });
 
 export async function createSession(data: SessionCreateRequest): Promise<{ session_id: string; first_message: string; geometry_params: unknown }> {
-  const res = await api.post('/api/sessions', data);
+  // Get user_id from NextAuth session or localStorage
+  let userId: string | null = null;
+  if (typeof window !== 'undefined') {
+    // Try to get from localStorage first (fallback)
+    userId = localStorage.getItem('userId');
+  }
+
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+
+  const res = await api.post('/api/sessions', {
+    ...data,
+    user_id: userId,
+  });
   return res.data;
 }
 

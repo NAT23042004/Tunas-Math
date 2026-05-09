@@ -31,32 +31,35 @@ Tránh: "Áp dụng Pythagoras: SA² = SH² + AH² = 16 + 9 = 25, vậy SA = 5cm
 
 
 GEOMETRY_TOOL = {
-    "name": "render_geometry",
-    "description": "Renders an interactive 3D geometry figure for the student. "
-                   "Call this whenever the problem involves 3D solids.",
-    "input_schema": {
-        "type": "object",
-        "required": ["solid_type", "params"],
-        "properties": {
-            "solid_type": {
-                "type": "string",
-                "enum": ["pyramid", "prism", "cone",
-                         "sphere", "cylinder", "composite"]
-            },
-            "params": {
-                "type": "object",
-                "description": "Geometric parameters: base dimensions, height, "
-                               "vertex labels (A,B,C…), apex label (S), "
-                               "special points to highlight (foot of altitude H, etc)"
-            },
-            "highlight_elements": {
-                "type": "array",
-                "description": "List of edges/faces/points to highlight",
-                "items": {"type": "string"}
-            },
-            "show_altitude": {
-                "type": "boolean",
-                "description": "Whether to draw the altitude from apex to base"
+    "type": "function",
+    "function": {
+        "name": "render_geometry",
+        "description": "Renders an interactive 3D geometry figure for the student. "
+                       "Call this whenever the problem involves 3D solids.",
+        "parameters": {
+            "type": "object",
+            "required": ["solid_type", "params"],
+            "properties": {
+                "solid_type": {
+                    "type": "string",
+                    "enum": ["pyramid", "prism", "cone",
+                             "sphere", "cylinder", "composite"]
+                },
+                "params": {
+                    "type": "object",
+                    "description": "Geometric parameters: base dimensions, height, "
+                                   "vertex labels (A,B,C…), apex label (S), "
+                                   "special points to highlight (foot of altitude H, etc)"
+                },
+                "highlight_elements": {
+                    "type": "array",
+                    "description": "List of edges/faces/points to highlight",
+                    "items": {"type": "string"}
+                },
+                "show_altitude": {
+                    "type": "boolean",
+                    "description": "Whether to draw the altitude from apex to base"
+                }
             }
         }
     }
