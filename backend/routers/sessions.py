@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from sqlalchemy.orm.attributes import flag_modified
-from uuid import UUID
-from datetime import datetime, timezone
 import json
+from datetime import datetime
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from db.database import get_db
 from db.models import Session, Problem, DialogueState, SessionStatus
@@ -21,6 +23,14 @@ router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
 # Initialize context builder
 context_builder = SessionContextBuilder()
+
+
+def _get_session_state_payload(session: Session) -> dict[str, int | str]:
+    return {
+        "dialogue_state": session.dialogue_state.value,
+        "hint_level": session.hint_level,
+        "fail_count": session.fail_count,
+    }
 
 
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
@@ -201,7 +211,6 @@ async def send_message(
 
 async def stream_response(llm_messages, system_prompt, tools, session, message_data, db):
     """Stream AI response using Server-Sent Events"""
-    from fastapi.responses import StreamingResponse
 
     async def generate():
         full_response = ""
@@ -236,15 +245,17 @@ async def stream_response(llm_messages, system_prompt, tools, session, message_d
             await db.refresh(session)
 
             # Send completion message
-            done_data = json.dumps({"content": "", "done": True, "session_state": {
-                "dialogue_state": session.dialogue_state.value,
-                "hint_level": session.hint_level,
-                "fail_count": session.fail_count
-            }})
+            done_data = json.dumps(
+                {
+                    "content": "",
+                    "done": True,
+                    "session_state": _get_session_state_payload(session),
+                }
+            )
             yield f"data: {done_data}\n\n"
 
         except Exception as e:
-            error_data = json.dumps({"error": str(e)})
+            error_data = json.dumps({"content": "", "done": True, "error": str(e)})
             yield f"data: {error_data}\n\n"
 
     return StreamingResponse(

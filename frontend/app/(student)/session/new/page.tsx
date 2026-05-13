@@ -31,7 +31,7 @@ export default function NewSessionPage() {
     setIsLoading(true);
     try {
       const res = await createSession({ topic_id: topicId });
-      router.push(`/session/${res.session_id}`);
+      router.push(`/session/${res.id}`);
     } catch {
       alert('Không thể tạo phiên học');
     } finally {

@@ -17,6 +17,7 @@ AI-powered Vietnamese math tutor for Grade 12 students using the Socratic method
 - **SQLAlchemy**: Async ORM with PostgreSQL support
 - **LiteLLM**: Multi-provider LLM integration (Anthropic, OpenAI, Cohere, Azure)
 - **Pydantic**: Data validation and settings management
+- **uv**: Python package and environment manager
 
 ## Project Structure
 
@@ -51,39 +52,36 @@ backend/
 
 - Python 3.11+
 - PostgreSQL 14+ with pgvector extension
+- `uv`
 
 ### Installation
 
-1. Create virtual environment:
+1. Sync the environment:
 ```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+uv sync
 ```
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Configure environment variables:
+2. Configure environment variables:
 ```bash
 cp .env.example .env
 # Edit .env with your actual values
 ```
 
-4. Initialize database:
+3. Initialize database:
 ```bash
-python init_db.py
+uv run python init_db.py
 ```
+
+This step is required before using the live API. The backend will start without it, but requests that hit the database will fail because the tables and sample data do not exist yet.
 
 ### Running the Server
 
 ```bash
 # Development server
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 # Production server
-uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+uv run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ## API Endpoints
@@ -107,13 +105,21 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 - `GET /` - Health check
 - `GET /health` - Health check
 
+### Auth
+
+- `POST /api/auth/token` - Mint backend JWT for an existing user
+
+This route is currently used as a development bridge for the frontend auth flow. It should be replaced or hardened before production deployment.
+
 ## Testing
 
 Run the test suite:
 ```bash
 cd backend
-PYTHONPATH=/home/natus/Project/Tunas-Math/backend python3 tests/test_socratic_engine.py
+uv run pytest tests -q
 ```
+
+The backend test suite is currently PostgreSQL-backed. Do not assume the async SQLite path is valid here; that setup was replaced because it was not reliable in this environment.
 
 ## Socratic Dialogue Engine
 
@@ -182,19 +188,15 @@ See `.env.example` for all required environment variables:
 
 ## Current Status
 
-✅ **Sprint 1 - AI Engine Complete**
+Sprint 1 is complete, and Sprint 2 backend/frontend integration is stabilized locally.
 
-- Dialogue state machine implemented
-- Socratic system prompt created
-- Multi-provider LLM client with streaming
-- Session context builder
-- Hint escalation system
-- Geometry detection and tool spec
-- Sample problems database
-- Comprehensive test suite
+Verified locally:
+
+- `uv run pytest tests -q`
+- live requests for problems, user creation, token minting, session creation/fetch, and completion
 
 ## Next Steps
 
-- Sprint 2: Core UI + 3D Viewer + Auth
-- Sprint 3: Progress, Roles & Polish
-- Sprint 4: UX Polish, Testing & Launch Prep
+- Browser-level end-to-end smoke test across login and chat flow
+- Replace the current token bridge with production-grade auth exchange
+- Clean up deprecation warnings from dependency upgrades

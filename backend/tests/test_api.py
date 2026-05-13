@@ -2,18 +2,19 @@
 API endpoint tests for Toán Socratic backend
 """
 
+import json
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import uuid4
 
-from db.models import User, Session, Problem, DifficultyLevel, DialogueState, SessionStatus
+from db.models import User, Session, Problem
 
 
 class TestHealthEndpoints:
     """Test health check endpoints"""
 
     @pytest.mark.api
+    @pytest.mark.asyncio
     async def test_root_endpoint(self, test_client: AsyncClient):
         """Test root endpoint returns health status"""
         response = await test_client.get("/")
@@ -25,6 +26,7 @@ class TestHealthEndpoints:
         assert "version" in data
 
     @pytest.mark.api
+    @pytest.mark.asyncio
     async def test_health_endpoint(self, test_client: AsyncClient):
         """Test health endpoint"""
         response = await test_client.get("/health")
@@ -103,6 +105,37 @@ class TestSessionsEndpoints:
             assert "session_state" in data
             assert data["message"]["role"] == "assistant"
             assert data["message"]["content"] is not None
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_send_message_stream(self, test_client: AsyncClient, sample_session: Session, mock_llm_client):
+        """Test streaming message response shape"""
+
+        async def mock_stream_response(messages, system_prompt, tools=None, max_tokens=1024):
+            for chunk in ["Xin chao ", "hoc sinh"]:
+                yield chunk
+
+        mock_llm_client.stream_response = mock_stream_response
+
+        from unittest.mock import patch
+        with patch('routers.sessions.llm_client', mock_llm_client):
+            response = await test_client.post(
+                f"/api/sessions/{sample_session.id}/message?stream=true",
+                json={"content": "Bat dau", "hint_requested": False},
+            )
+
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+
+        events = [
+            json.loads(line.removeprefix("data: "))
+            for line in response.text.splitlines()
+            if line.startswith("data: ")
+        ]
+        assert events[0] == {"content": "Xin chao ", "done": False}
+        assert events[1] == {"content": "hoc sinh", "done": False}
+        assert events[-1]["done"] is True
+        assert events[-1]["session_state"]["dialogue_state"] == "review"
 
     @pytest.mark.api
     @pytest.mark.asyncio
@@ -243,3 +276,24 @@ class TestErrorHandling:
 
         response = await test_client.post("/api/sessions", json=incomplete_data)
         assert response.status_code == 422  # Validation error
+
+
+class TestAuthEndpoints:
+    """Test auth API endpoints"""
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_generate_token(self, test_client: AsyncClient, sample_user: User):
+        response = await test_client.post("/api/auth/token", json={"user_id": str(sample_user.id)})
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["token_type"] == "bearer"
+        assert isinstance(data["access_token"], str)
+        assert data["access_token"]
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_generate_token_user_not_found(self, test_client: AsyncClient):
+        response = await test_client.post("/api/auth/token", json={"user_id": str(uuid4())})
+        assert response.status_code == 404
