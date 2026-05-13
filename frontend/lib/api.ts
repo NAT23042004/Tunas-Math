@@ -1,6 +1,6 @@
 // frontend/lib/api.ts
 import axios from 'axios';
-import type { SessionCreateRequest, SessionMessageRequest, SessionCompleteRequest, Problem, MasteryData } from '@/types';
+import type { SessionCreateRequest, SessionMessageRequest, SessionCompleteRequest, Problem, MasteryData, Session } from '@/types';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
@@ -17,11 +17,9 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export async function createSession(data: SessionCreateRequest): Promise<{ session_id: string; first_message: string; geometry_params: unknown }> {
-  // Get user_id from NextAuth session or localStorage
+export async function createSession(data: SessionCreateRequest): Promise<Session> {
   let userId: string | null = null;
   if (typeof window !== 'undefined') {
-    // Try to get from localStorage first (fallback)
     userId = localStorage.getItem('userId');
   }
 
@@ -37,12 +35,15 @@ export async function createSession(data: SessionCreateRequest): Promise<{ sessi
 }
 
 export async function sendMessage(sessionId: string, data: SessionMessageRequest): Promise<ReadableStream> {
-  const res = await fetch(`${api.defaults.baseURL}/api/sessions/${sessionId}/message`, {
+  const res = await fetch(`${api.defaults.baseURL}/api/sessions/${sessionId}/message?stream=true`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('accessToken')}` },
     body: JSON.stringify(data),
   });
-  return res.body!;
+  if (!res.ok || !res.body) {
+    throw new Error(`Failed to stream message: ${res.status}`);
+  }
+  return res.body;
 }
 
 export async function completeSession(sessionId: string, data: SessionCompleteRequest): Promise<{ summary: string; mastery_delta: number; next_suggested_topic: string }> {
@@ -60,11 +61,17 @@ export async function getProblems(topicId?: string, difficulty?: string, isGeome
 }
 
 export async function getMyProgress(): Promise<MasteryData> {
-  const res = await api.get('/api/progress/me');
+  let userId: string | null = null;
+  if (typeof window !== 'undefined') {
+    userId = localStorage.getItem('userId');
+  }
+  const res = await api.get('/api/progress/mastery', {
+    params: { user_id: userId }
+  });
   return res.data;
 }
 
-export async function getSessionHistory(sessionId: string): Promise<{ session: unknown; messages: unknown; problem: unknown }> {
+export async function getSessionHistory(sessionId: string): Promise<Session> {
   const res = await api.get(`/api/sessions/${sessionId}`);
   return res.data;
 }

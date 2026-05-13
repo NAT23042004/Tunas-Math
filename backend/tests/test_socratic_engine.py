@@ -152,8 +152,8 @@ async def test_system_prompt():
     print("✓ System prompt formatting successful")
 
     # Test geometry tool spec
-    assert GEOMETRY_TOOL["name"] == "render_geometry"
-    assert "pyramid" in GEOMETRY_TOOL["input_schema"]["properties"]["solid_type"]["enum"]
+    assert GEOMETRY_TOOL["function"]["name"] == "render_geometry"
+    assert "pyramid" in GEOMETRY_TOOL["function"]["parameters"]["properties"]["solid_type"]["enum"]
     print("✓ Geometry tool spec correct")
 
     print("✓ System Prompt tests passed!\n")

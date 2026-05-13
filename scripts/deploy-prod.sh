@@ -21,11 +21,11 @@ fi
 
 # Run tests
 echo "🧪 Running tests..."
-docker-compose -f docker-compose.yml run backend pytest tests/
+docker compose -f docker-compose.yml run backend uv run pytest tests/
 
 # Build production images
 echo "🏗️  Building production images..."
-docker-compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml build
 
 # Deploy to Railway (Backend)
 echo "🚂 Deploying backend to Railway..."

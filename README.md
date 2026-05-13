@@ -2,7 +2,7 @@
 
 Full-stack AI application for Grade 12 Vietnamese students using the Socratic method with interactive 3D geometry visualization.
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 toan-socratic/
@@ -15,24 +15,25 @@ toan-socratic/
 └── docker-compose.yml    # Development orchestration
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
 - Node.js 18+ (for local frontend development)
 - Python 3.11+ (for local backend development)
+- `uv` (for local backend development)
 
-### Using Docker (Recommended)
+### Using Docker
 
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f
+docker compose logs -f
 
 # Stop services
-docker-compose down
+docker compose down
 ```
 
 ### Local Development
@@ -40,8 +41,9 @@ docker-compose down
 ```bash
 # Backend
 cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
+uv sync
+uv run python init_db.py
+uv run uvicorn main:app --reload
 
 # Frontend
 cd frontend
@@ -49,7 +51,9 @@ npm install
 npm run dev
 ```
 
-## 🛠️ Tech Stack
+The backend depends on PostgreSQL schema and seed data created by `uv run python init_db.py`. If you skip that step, live API requests will fail with missing-table errors.
+
+## Tech Stack
 
 ### Backend
 - **FastAPI** - Modern async web framework
@@ -69,29 +73,31 @@ npm run dev
 - **Vercel** - Frontend deployment
 - **Railway** - Backend deployment
 
-## 📖 Documentation
+## Documentation
 
 - [Backend Documentation](backend/README.md)
 - [Frontend Documentation](frontend/README.md)
 - [API Documentation](docs/API.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Backend tests
 cd backend
-pytest tests/
+uv run pytest tests -q
 
 # Frontend tests
 cd frontend
-npm test
+npm run lint
+npm run build
 
-# E2E tests
-npm run test:e2e
+# Local app smoke check (frontend + backend servers must already be running)
+cd ..
+make smoke-local
 ```
 
-## 🚢 Deployment
+## Deployment
 
 ### Frontend (Vercel)
 ```bash
@@ -103,18 +109,19 @@ vercel --prod
 railway up
 ```
 
-## 📊 Project Status
+## Project Status
 
-- ✅ Sprint 1: Socratic AI Engine (Complete)
-- ✅ Sprint 2: Core UI + 3D Viewer + Auth (Complete)
-- ⏳ Sprint 3: Progress, Roles & Polish
-- ⏳ Sprint 4: UX Polish, Testing & Launch Prep
+- ✅ Sprint 1: Socratic AI Engine
+- ✅ Sprint 2: Core UI, auth integration, session flow stabilization
+- ⏳ Sprint 3: Progress, roles, and auth hardening
+- ⏳ Sprint 4: UX polish, testing, and launch prep
 
-### Sprint 2 Accomplishments
-- ✅ Google OAuth authentication with NextAuth
-- ✅ Server-Sent Events (SSE) streaming for chat
-- ✅ Centralized API client with TypeScript types
-- ✅ React Query integration for state management
-- ✅ 3D geometry viewer with Three.js
-- ✅ Session management with JWT tokens
-- ✅ Route protection with middleware
+Current branch verification:
+
+- backend tests pass with PostgreSQL-backed async fixtures
+- frontend lint/build pass
+- live backend auth/session CRUD smoke path is working locally
+
+Known boundary:
+
+- `POST /api/auth/token` is still a development bridge, not the final production auth design

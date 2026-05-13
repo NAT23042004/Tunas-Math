@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -54,6 +52,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: development
     container_name: toan_socratic_api
     ports:
       - "8000:8000"
@@ -78,9 +77,9 @@ services:
       - /app/ai/__pycache__
       - /app/db/__pycache__
       - /app/data/__pycache__
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    command: uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 30s
       timeout: 10s
       retries: 3

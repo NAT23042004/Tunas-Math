@@ -304,7 +304,7 @@ class TestLLMClientProviders:
 
             assert response == "Anthropic response"
             call_args = mock_completion.call_args
-            assert call_args[1]['model_name'] == "anthropic/claude-sonnet-4-6"
+            assert call_args[1]['model'] == "anthropic/claude-sonnet-4-6"
 
     @pytest.mark.unit
     @pytest.mark.asyncio
@@ -323,7 +323,7 @@ class TestLLMClientProviders:
 
             assert response == "OpenAI response"
             call_args = mock_completion.call_args
-            assert call_args[1]['model_name'] == "openai/gpt-4"
+            assert call_args[1]['model'] == "openai/gpt-4"
 
     @pytest.mark.unit
     @pytest.mark.asyncio
@@ -342,7 +342,7 @@ class TestLLMClientProviders:
 
             assert response == "Qwen response"
             call_args = mock_completion.call_args
-            assert call_args[1]['model_name'] == "qwen/qwen-turbo"
+            assert call_args[1]['model'] == "qwen/qwen-turbo"
 
     @pytest.mark.unit
     @pytest.mark.asyncio
@@ -361,4 +361,4 @@ class TestLLMClientProviders:
 
             assert response == "Gemini response"
             call_args = mock_completion.call_args
-            assert call_args[1]['model_name'] == "gemini/gemini-pro"
+            assert call_args[1]['model'] == "gemini/gemini-pro"

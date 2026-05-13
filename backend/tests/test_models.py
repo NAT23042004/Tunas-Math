@@ -247,7 +247,7 @@ class TestSessionModel:
 
         # Complete session
         session.status = SessionStatus.COMPLETED
-        session.ended_at = datetime.now(timezone.utc)
+        session.ended_at = datetime.utcnow()
         await db_session.commit()
 
         await db_session.refresh(session)
@@ -267,7 +267,7 @@ class TestProgressModel:
             topic_id="hinh-hoc.hinh-chop",
             mastery_score=0.75,
             sessions_count=5,
-            last_practiced=datetime.now(timezone.utc)
+            last_practiced=datetime.utcnow()
         )
 
         db_session.add(progress)
