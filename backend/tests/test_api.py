@@ -1187,22 +1187,22 @@ class TestProgressAndAdminEndpoints:
         auth_headers: dict[str, str],
         session_factory: async_sessionmaker[AsyncSession],
     ):
-        today = datetime.utcnow().date()
-        completed_today = datetime.combine(today, dtime(hour=12, minute=0))
-        future_completion = datetime.combine(today + timedelta(days=1), dtime(hour=12, minute=0))
+        now = datetime.utcnow().replace(microsecond=0)
+        completed_recently = now - timedelta(minutes=5)
+        future_completion = now + timedelta(days=1)
 
         await self._create_completed_session(
             session_factory,
             user_id=sample_user.id,
             topic_id="giai-tich.dao-ham",
-            started_at=completed_today - timedelta(minutes=20),
-            ended_at=completed_today,
+            started_at=completed_recently - timedelta(minutes=20),
+            ended_at=completed_recently,
         )
         await self._create_completed_session(
             session_factory,
             user_id=sample_user.id,
             topic_id="giai-tich.dao-ham",
-            started_at=completed_today,
+            started_at=completed_recently,
             ended_at=future_completion,
         )
 
