@@ -1180,6 +1180,41 @@ class TestProgressAndAdminEndpoints:
 
     @pytest.mark.api
     @pytest.mark.asyncio
+    async def test_progress_excludes_future_dated_completions(
+        self,
+        test_client: AsyncClient,
+        sample_user: User,
+        auth_headers: dict[str, str],
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        today = datetime.utcnow().date()
+        completed_today = datetime.combine(today, dtime(hour=12, minute=0))
+        future_completion = datetime.combine(today + timedelta(days=1), dtime(hour=12, minute=0))
+
+        await self._create_completed_session(
+            session_factory,
+            user_id=sample_user.id,
+            topic_id="giai-tich.dao-ham",
+            started_at=completed_today - timedelta(minutes=20),
+            ended_at=completed_today,
+        )
+        await self._create_completed_session(
+            session_factory,
+            user_id=sample_user.id,
+            topic_id="giai-tich.dao-ham",
+            started_at=completed_today,
+            ended_at=future_completion,
+        )
+
+        response = await test_client.get("/api/progress/me", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["sessions_this_week"] == 1
+        assert sum(day["sessions"] for day in data["weekly_activity"]) == 1
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
     async def test_admin_stats_forbidden_for_student(
         self,
         test_client: AsyncClient,

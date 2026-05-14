@@ -48,6 +48,7 @@ async def _build_mastery_map(db: AsyncSession, user_id: UUID) -> dict:
             Session.user_id == user_id,
             Session.status == SessionStatus.COMPLETED,
             completion_timestamp >= recent_window_start,
+            completion_timestamp <= now,
         ).order_by(completion_timestamp.desc())
     )
     session_dates = list(dates_result.scalars().all())
