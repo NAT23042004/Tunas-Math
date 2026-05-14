@@ -6,13 +6,22 @@ import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 import pytest
+from fastapi import HTTPException
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from uuid import uuid4
 
 from toan_socratic.config import settings
 from toan_socratic.db.database import get_db
-from toan_socratic.db.models import DialogueState, Problem, Session, User
+from toan_socratic.db.models import (
+    DialogueState,
+    Problem,
+    Progress,
+    Session,
+    SessionStatus,
+    User,
+    UserRole,
+)
 from toan_socratic.main import app, create_app
 
 
@@ -87,7 +96,13 @@ class TestSessionsEndpoints:
 
     @pytest.mark.api
     @pytest.mark.asyncio
-    async def test_create_session(self, test_client: AsyncClient, sample_problem: Problem, sample_user: User):
+    async def test_create_session(
+        self,
+        test_client: AsyncClient,
+        sample_problem: Problem,
+        sample_user: User,
+        auth_headers: dict[str, str],
+    ):
         """Test creating a new session"""
         session_data = {
             "user_id": str(sample_user.id),
@@ -95,7 +110,11 @@ class TestSessionsEndpoints:
             "problem_id": str(sample_problem.id)
         }
 
-        response = await test_client.post("/api/sessions", json=session_data)
+        response = await test_client.post(
+            "/api/sessions",
+            json=session_data,
+            headers=auth_headers,
+        )
         assert response.status_code == 201
 
         data = response.json()
@@ -105,12 +124,43 @@ class TestSessionsEndpoints:
         assert data["dialogue_state"] == "review"
         assert data["hint_level"] == 0
         assert data["fail_count"] == 0
+        assert data["user_id"] == str(sample_user.id)
 
     @pytest.mark.api
     @pytest.mark.asyncio
-    async def test_get_session(self, test_client: AsyncClient, sample_session: Session):
+    async def test_create_session_ignores_client_supplied_user_id(
+        self,
+        test_client: AsyncClient,
+        sample_problem: Problem,
+        sample_user: User,
+        other_user: User,
+        auth_headers: dict[str, str],
+    ):
+        response = await test_client.post(
+            "/api/sessions",
+            json={
+                "user_id": str(other_user.id),
+                "topic_id": "hinh-hoc.hinh-chop",
+                "problem_id": str(sample_problem.id),
+            },
+            headers=auth_headers,
+        )
+        assert response.status_code == 201
+        assert response.json()["user_id"] == str(sample_user.id)
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_get_session(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        auth_headers: dict[str, str],
+    ):
         """Test getting session details"""
-        response = await test_client.get(f"/api/sessions/{sample_session.id}")
+        response = await test_client.get(
+            f"/api/sessions/{sample_session.id}",
+            headers=auth_headers,
+        )
         assert response.status_code == 200
 
         data = response.json()
@@ -120,15 +170,39 @@ class TestSessionsEndpoints:
 
     @pytest.mark.api
     @pytest.mark.asyncio
-    async def test_get_session_not_found(self, test_client: AsyncClient):
+    async def test_get_session_not_found(
+        self,
+        test_client: AsyncClient,
+        auth_headers: dict[str, str],
+    ):
         """Test getting non-existent session"""
         fake_id = uuid4()
-        response = await test_client.get(f"/api/sessions/{fake_id}")
+        response = await test_client.get(f"/api/sessions/{fake_id}", headers=auth_headers)
         assert response.status_code == 404
 
     @pytest.mark.api
     @pytest.mark.asyncio
-    async def test_send_message(self, test_client: AsyncClient, sample_session: Session, mock_llm_client):
+    async def test_get_session_forbidden_for_non_owner(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        other_auth_headers: dict[str, str],
+    ):
+        response = await test_client.get(
+            f"/api/sessions/{sample_session.id}",
+            headers=other_auth_headers,
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_send_message(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        mock_llm_client,
+        auth_headers: dict[str, str],
+    ):
         """Test sending a message to get AI response"""
         message_data = {
             "content": "Tính thể tích hình chóp",
@@ -140,7 +214,8 @@ class TestSessionsEndpoints:
         with patch("toan_socratic.routers.sessions.llm_client", mock_llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
-                json=message_data
+                json=message_data,
+                headers=auth_headers,
             )
             if response.status_code != 200:
                 print(f"Error response: {response.text}")
@@ -160,6 +235,7 @@ class TestSessionsEndpoints:
         test_client: AsyncClient,
         sample_session: Session,
         session_factory: async_sessionmaker[AsyncSession],
+        auth_headers: dict[str, str],
     ):
         from unittest.mock import patch
 
@@ -174,6 +250,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "V = 50 cm3", "hint_requested": False},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -188,6 +265,7 @@ class TestSessionsEndpoints:
         test_client: AsyncClient,
         sample_session: Session,
         session_factory: async_sessionmaker[AsyncSession],
+        auth_headers: dict[str, str],
     ):
         from unittest.mock import patch
 
@@ -202,6 +280,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "V = 48 cm3", "hint_requested": False},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -216,6 +295,7 @@ class TestSessionsEndpoints:
         test_client: AsyncClient,
         sample_session: Session,
         session_factory: async_sessionmaker[AsyncSession],
+        auth_headers: dict[str, str],
     ):
         from unittest.mock import patch
 
@@ -230,6 +310,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "Em biết diện tích đáy là 36 cm2", "hint_requested": False},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -239,7 +320,13 @@ class TestSessionsEndpoints:
 
     @pytest.mark.api
     @pytest.mark.asyncio
-    async def test_send_message_stream(self, test_client: AsyncClient, sample_session: Session, mock_llm_client):
+    async def test_send_message_stream(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        mock_llm_client,
+        auth_headers: dict[str, str],
+    ):
         """Test streaming message response shape"""
 
         async def mock_stream_response(messages, system_prompt, tools=None, max_tokens=1024):
@@ -253,6 +340,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message?stream=true",
                 json={"content": "Bat dau", "hint_requested": False},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -275,6 +363,7 @@ class TestSessionsEndpoints:
         test_client: AsyncClient,
         sample_session: Session,
         session_factory: async_sessionmaker[AsyncSession],
+        auth_headers: dict[str, str],
     ):
         from unittest.mock import patch
 
@@ -289,6 +378,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message?stream=true",
                 json={"content": "V = 48 cm3", "hint_requested": False},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -302,9 +392,55 @@ class TestSessionsEndpoints:
         assert events[-1]["done"] is True
         assert events[-1]["session_state"]["dialogue_state"] == "summarize"
 
-        session_response = await test_client.get(f"/api/sessions/{sample_session.id}")
+        session_response = await test_client.get(
+            f"/api/sessions/{sample_session.id}",
+            headers=auth_headers,
+        )
         assert session_response.status_code == 200
         assert session_response.json()["dialogue_state"] == "summarize"
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_send_message_stream_error_persists_student_turn(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        mock_llm_client,
+        auth_headers: dict[str, str],
+    ):
+        from unittest.mock import patch
+
+        async def failing_stream_response(messages, system_prompt, tools=None, max_tokens=1024):
+            if False:
+                yield ""
+            raise RuntimeError("llm down")
+
+        mock_llm_client.stream_response = failing_stream_response
+
+        with patch("toan_socratic.routers.sessions.llm_client", mock_llm_client):
+            response = await test_client.post(
+                f"/api/sessions/{sample_session.id}/message?stream=true",
+                json={"content": "Em thu giai bai nay", "hint_requested": False},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 200
+        events = [
+            json.loads(line.removeprefix("data: "))
+            for line in response.text.splitlines()
+            if line.startswith("data: ")
+        ]
+        assert events[-1]["error"] == "llm down"
+
+        session_response = await test_client.get(
+            f"/api/sessions/{sample_session.id}",
+            headers=auth_headers,
+        )
+        assert session_response.status_code == 200
+        data = session_response.json()
+        assert data["messages"][-1]["role"] == "user"
+        assert data["messages"][-1]["content"] == "Em thu giai bai nay"
+        assert data["dialogue_state"] == "heuristic"
 
     @pytest.mark.api
     @pytest.mark.asyncio
@@ -314,6 +450,7 @@ class TestSessionsEndpoints:
         sample_session: Session,
         mock_llm_client,
         session_factory: async_sessionmaker[AsyncSession],
+        auth_headers: dict[str, str],
     ):
         """Test hint requests push the dialogue into rectify mode"""
         from unittest.mock import patch
@@ -328,6 +465,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "Em cần gợi ý", "hint_requested": True},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -343,6 +481,7 @@ class TestSessionsEndpoints:
         sample_session: Session,
         mock_llm_client,
         session_factory: async_sessionmaker[AsyncSession],
+        auth_headers: dict[str, str],
     ):
         """Test the first hint request takes precedence over the review state"""
         from unittest.mock import patch
@@ -357,6 +496,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "", "hint_requested": True},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -372,6 +512,7 @@ class TestSessionsEndpoints:
         sample_session: Session,
         mock_llm_client,
         session_factory: async_sessionmaker[AsyncSession],
+        auth_headers: dict[str, str],
     ):
         """Test a substantive follow-up can recover rectify back to heuristic"""
         from unittest.mock import patch
@@ -388,6 +529,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "Em thử lại", "hint_requested": False},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -404,6 +546,7 @@ class TestSessionsEndpoints:
         sample_session: Session,
         mock_llm_client,
         session_factory: async_sessionmaker[AsyncSession],
+        auth_headers: dict[str, str],
     ):
         """Test an incorrect answer-like assertion enters rectify mode"""
         from unittest.mock import patch
@@ -418,6 +561,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "V = 50 cm3", "hint_requested": False},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -433,6 +577,7 @@ class TestSessionsEndpoints:
         sample_session: Session,
         mock_llm_client,
         session_factory: async_sessionmaker[AsyncSession],
+        auth_headers: dict[str, str],
     ):
         """Test a correct final answer enters summarize mode"""
         from unittest.mock import patch
@@ -447,6 +592,7 @@ class TestSessionsEndpoints:
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "V = 48 cm3", "hint_requested": False},
+                headers=auth_headers,
             )
 
         assert response.status_code == 200
@@ -456,7 +602,12 @@ class TestSessionsEndpoints:
 
     @pytest.mark.api
     @pytest.mark.asyncio
-    async def test_complete_session(self, test_client: AsyncClient, sample_session: Session):
+    async def test_complete_session(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        auth_headers: dict[str, str],
+    ):
         """Test completing a session"""
         completion_data = {
             "student_rating": 5
@@ -464,7 +615,8 @@ class TestSessionsEndpoints:
 
         response = await test_client.put(
             f"/api/sessions/{sample_session.id}/complete",
-            json=completion_data
+            json=completion_data,
+            headers=auth_headers,
         )
         assert response.status_code == 200
 
@@ -473,6 +625,20 @@ class TestSessionsEndpoints:
         assert "mastery_delta" in data
         assert "next_suggested_topic" in data
         assert isinstance(data["mastery_delta"], float)
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_list_sessions_returns_only_current_user(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        auth_headers: dict[str, str],
+    ):
+        response = await test_client.get("/api/sessions", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["id"] == str(sample_session.id)
 
 
 class TestProblemsEndpoints:
@@ -562,10 +728,14 @@ class TestErrorHandling:
 
     @pytest.mark.api
     @pytest.mark.asyncio
-    async def test_invalid_session_id(self, test_client: AsyncClient):
+    async def test_invalid_session_id(
+        self,
+        test_client: AsyncClient,
+        auth_headers: dict[str, str],
+    ):
         """Test handling invalid session ID"""
         invalid_id = "not-a-uuid"
-        response = await test_client.get(f"/api/sessions/{invalid_id}")
+        response = await test_client.get(f"/api/sessions/{invalid_id}", headers=auth_headers)
         assert response.status_code == 422  # Validation error
 
     @pytest.mark.api
@@ -584,14 +754,21 @@ class TestErrorHandling:
 
     @pytest.mark.api
     @pytest.mark.asyncio
-    async def test_missing_required_fields(self, test_client: AsyncClient):
+    async def test_missing_required_fields(
+        self,
+        test_client: AsyncClient,
+        auth_headers: dict[str, str],
+    ):
         """Test handling missing required fields"""
         incomplete_data = {
-            "topic_id": "test-topic"
-            # Missing required user_id field
+            "problem_id": str(uuid4())
         }
 
-        response = await test_client.post("/api/sessions", json=incomplete_data)
+        response = await test_client.post(
+            "/api/sessions",
+            json=incomplete_data,
+            headers=auth_headers,
+        )
         assert response.status_code == 422  # Validation error
 
 
@@ -616,7 +793,9 @@ class TestAuthEndpoints:
     @pytest.mark.asyncio
     async def test_generate_token_requires_bridge_header(self):
         user_id = uuid4()
-        client = await self._build_auth_client(SimpleNamespace(id=user_id, email="test@example.com"))
+        client = await self._build_auth_client(
+            SimpleNamespace(id=user_id, email="test@example.com", role=UserRole.STUDENT)
+        )
         try:
             response = await client.post("/api/auth/token", json={"user_id": str(user_id)})
         finally:
@@ -629,7 +808,9 @@ class TestAuthEndpoints:
     async def test_generate_token(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setattr(settings, "auth_bridge_secret", "test-bridge-secret")
         user_id = uuid4()
-        client = await self._build_auth_client(SimpleNamespace(id=user_id, email="test@example.com"))
+        client = await self._build_auth_client(
+            SimpleNamespace(id=user_id, email="test@example.com", role=UserRole.STUDENT)
+        )
         try:
             response = await client.post(
                 "/api/auth/token",
@@ -661,6 +842,199 @@ class TestAuthEndpoints:
             await client.aclose()
             app.dependency_overrides.clear()
         assert response.status_code == 404
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_exchange_google_token(
+        self,
+        test_client: AsyncClient,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(settings, "google_client_id", "google-client-id")
+
+        async def fake_verify(_: str) -> dict[str, str]:
+            return {
+                "sub": "google-sub-123",
+                "email": "google@example.com",
+                "name": "Google User",
+                "picture": "https://example.com/avatar.png",
+            }
+
+        monkeypatch.setattr("toan_socratic.routers.auth.verify_google_identity_token", fake_verify)
+        response = await test_client.post(
+            "/api/auth/google",
+            json={"id_token": "signed-google-token"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["token_type"] == "bearer"
+        assert data["user"]["email"] == "google@example.com"
+        assert data["user"]["role"] == "student"
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_exchange_google_token_rejects_invalid_token(
+        self,
+        test_client: AsyncClient,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        monkeypatch.setattr(settings, "google_client_id", "google-client-id")
+
+        async def fake_verify(_: str) -> dict[str, str]:
+            raise HTTPException(status_code=401, detail="Invalid Google ID token")
+
+        monkeypatch.setattr("toan_socratic.routers.auth.verify_google_identity_token", fake_verify)
+        response = await test_client.post(
+            "/api/auth/google",
+            json={"id_token": "bad-token"},
+        )
+        assert response.status_code == 401
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_exchange_google_token_does_not_auto_link_admin_by_email(
+        self,
+        test_client: AsyncClient,
+        admin_user: User,
+        monkeypatch: pytest.MonkeyPatch,
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        monkeypatch.setattr(settings, "google_client_id", "google-client-id")
+
+        async def fake_verify(_: str) -> dict[str, str]:
+            return {
+                "sub": "attacker-google-sub",
+                "email": admin_user.email,
+                "name": "Admin User",
+                "picture": "",
+            }
+
+        monkeypatch.setattr("toan_socratic.routers.auth.verify_google_identity_token", fake_verify)
+        response = await test_client.post(
+            "/api/auth/google",
+            json={"id_token": "signed-google-token"},
+        )
+        assert response.status_code == 409
+
+        async with session_factory() as db:
+            user = await db.get(User, admin_user.id)
+            assert user.auth_provider is None
+            assert user.auth_subject is None
+
+
+class TestProgressAndAdminEndpoints:
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_complete_session_creates_progress(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        sample_user: User,
+        auth_headers: dict[str, str],
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        response = await test_client.put(
+            f"/api/sessions/{sample_session.id}/complete",
+            json={"student_rating": 5},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+
+        async with session_factory() as db:
+            progress = await db.get(
+                Progress,
+                {"user_id": sample_user.id, "topic_id": sample_session.topic_id},
+            )
+            assert progress is not None
+            assert progress.sessions_count == 1
+            assert progress.mastery_score > 0
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_complete_session_is_idempotent_for_progress(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        sample_user: User,
+        auth_headers: dict[str, str],
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        first_response = await test_client.put(
+            f"/api/sessions/{sample_session.id}/complete",
+            json={"student_rating": 5},
+            headers=auth_headers,
+        )
+        assert first_response.status_code == 200
+
+        second_response = await test_client.put(
+            f"/api/sessions/{sample_session.id}/complete",
+            json={"student_rating": 1},
+            headers=auth_headers,
+        )
+        assert second_response.status_code == 200
+
+        async with session_factory() as db:
+            session = await db.get(Session, sample_session.id)
+            progress = await db.get(
+                Progress,
+                {"user_id": sample_user.id, "topic_id": sample_session.topic_id},
+            )
+            assert session.student_rating == 5
+            assert progress.sessions_count == 1
+            assert progress.mastery_score == first_response.json()["mastery_delta"]
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_get_progress_me(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        auth_headers: dict[str, str],
+    ):
+        complete_response = await test_client.put(
+            f"/api/sessions/{sample_session.id}/complete",
+            json={"student_rating": 4},
+            headers=auth_headers,
+        )
+        assert complete_response.status_code == 200
+
+        response = await test_client.get("/api/progress/me", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert sample_session.topic_id in data["mastery_by_topic"]
+        assert data["sessions_this_week"] >= 1
+        assert isinstance(data["weekly_activity"], list)
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_admin_stats_forbidden_for_student(
+        self,
+        test_client: AsyncClient,
+        auth_headers: dict[str, str],
+    ):
+        response = await test_client.get("/api/admin/stats", headers=auth_headers)
+        assert response.status_code == 403
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_admin_stats_for_admin(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        admin_auth_headers: dict[str, str],
+        auth_headers: dict[str, str],
+    ):
+        await test_client.put(
+            f"/api/sessions/{sample_session.id}/complete",
+            json={"student_rating": 4},
+            headers=auth_headers,
+        )
+
+        response = await test_client.get("/api/admin/stats", headers=admin_auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_users"] >= 2
+        assert data["completed_sessions"] >= 1
 
 
 class TestCorsConfiguration:

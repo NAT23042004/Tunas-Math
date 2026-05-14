@@ -1,33 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import ChatPanel from '@/components/ChatPanel';
 import ContextPanel from '@/components/ContextPanel';
+import SessionSummary from '@/components/SessionSummary';
+import { completeSession, getSession, sendMessage } from '@/lib/api';
 import { useSessionStore } from '@/lib/sessionStore';
-import { sendMessage, getSessionHistory } from '@/lib/api';
-import type { Message } from '@/types';
+import type { Message, SessionSummaryResponse } from '@/types';
 
 export default function SessionPage() {
   const params = useParams();
+  const router = useRouter();
   const sessionId = params.id as string;
   const { messages, addMessage, setSession, setStreaming, isStreaming } = useSessionStore();
   const [streamingText, setStreamingText] = useState('');
   const [dialogueState, setDialogueState] = useState('review');
   const [hintLevel, setHintLevel] = useState(0);
+  const [summaryData, setSummaryData] = useState<SessionSummaryResponse | null>(null);
+  const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
     setSession(sessionId);
-    getSessionHistory(sessionId).then((data) => {
+    getSession(sessionId).then((data) => {
       if (data.messages && Array.isArray(data.messages)) {
         (data.messages as Message[]).forEach((msg) => addMessage(msg));
       }
-      if (data.dialogue_state) {
-        setDialogueState(data.dialogue_state);
-      }
-      if (data.hint_level !== undefined) {
-        setHintLevel(data.hint_level);
-      }
+      setDialogueState(data.dialogue_state || 'review');
+      setHintLevel(data.hint_level ?? 0);
     });
   }, [sessionId, setSession, addMessage]);
 
@@ -121,14 +122,68 @@ export default function SessionPage() {
     }
   };
 
+  const handleComplete = () => {
+    setIsRatingDialogOpen(true);
+  };
+
+  const handleSubmitCompletion = async (rating: number) => {
+    setIsCompleting(true);
+    try {
+      const result = await completeSession(sessionId, { student_rating: rating });
+      setIsRatingDialogOpen(false);
+      setSummaryData(result);
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
   return (
-    <div className="flex h-screen">
-      <div className="flex-1">
-        <ChatPanel messages={messages} isStreaming={isStreaming} streamingText={streamingText} onSend={handleSend} />
+    <div className="flex min-h-screen flex-col xl:flex-row">
+      <div className="flex min-h-[65vh] flex-1 flex-col">
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div>
+            <div className="text-sm font-medium text-slate-900">Phien hoc truc tiep</div>
+            <div className="text-xs text-slate-500">Trang thai: {dialogueState} | Goi y: L{hintLevel}</div>
+          </div>
+          <button
+            type="button"
+            onClick={handleComplete}
+            disabled={isCompleting}
+            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {isCompleting ? 'Dang ket thuc...' : 'Ket thuc phien'}
+          </button>
+        </div>
+        <div className="flex-1">
+          <ChatPanel messages={messages} isStreaming={isStreaming} streamingText={streamingText} onSend={handleSend} />
+        </div>
       </div>
-      <div className="w-80">
+      <div className="border-t xl:w-96 xl:border-l xl:border-t-0">
         <ContextPanel dialogueState={dialogueState} hintLevel={hintLevel} messages={messages} />
       </div>
+
+      {isRatingDialogOpen && (
+        <SessionSummary
+          mode="rating"
+          summary="Danh gia phien hoc de cap nhat mastery chinh xac."
+          isSubmitting={isCompleting}
+          onCancel={() => setIsRatingDialogOpen(false)}
+          onFinish={handleSubmitCompletion}
+        />
+      )}
+
+      {summaryData && (
+        <SessionSummary
+          mode="summary"
+          summary={summaryData.summary}
+          masteryDelta={summaryData.mastery_delta}
+          nextTopic={summaryData.next_suggested_topic}
+          onFinish={() => {
+            setSummaryData(null);
+            router.push('/history');
+          }}
+        />
+      )}
     </div>
   );
 }
