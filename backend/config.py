@@ -1,10 +1,16 @@
 from typing import Optional
 
 from pydantic_settings import BaseSettings
+from pydantic_settings import SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings"""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+    )
 
     # API Configuration
     app_name: str = "Toán Socratic API"
@@ -34,11 +40,13 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql+asyncpg://user:pass@localhost:5432/toansc"
     redis_url: str = "redis://redis:6379"
+    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     # JWT Configuration
     jwt_secret: str
     jwt_algorithm: str = "HS256"
     jwt_expiration_hours: int = 24
+    auth_bridge_secret: Optional[str] = None
 
     # Google OAuth
     google_client_id: Optional[str] = None
@@ -48,9 +56,12 @@ class Settings(BaseSettings):
     nextauth_secret: str
     nextauth_url: str = "http://localhost:3000"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    @property
+    def parsed_cors_origins(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
+    @property
+    def resolved_auth_bridge_secret(self) -> str:
+        return self.auth_bridge_secret or self.nextauth_secret
 
 settings = Settings()

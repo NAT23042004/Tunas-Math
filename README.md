@@ -18,7 +18,7 @@ toan-socratic/
 ## Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
+- Docker with `docker compose`
 - Node.js 18+ (for local frontend development)
 - Python 3.11+ (for local backend development)
 - `uv` (for local backend development)
@@ -39,6 +39,9 @@ docker compose down
 ### Local Development
 
 ```bash
+# Infrastructure
+docker compose up -d postgres
+
 # Backend
 cd backend
 uv sync
@@ -52,6 +55,12 @@ npm run dev
 ```
 
 The backend depends on PostgreSQL schema and seed data created by `uv run python init_db.py`. If you skip that step, live API requests will fail with missing-table errors.
+
+Local auth bridge baseline for Sprint 2:
+
+- set `CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000` in `backend/.env`
+- set `AUTH_BRIDGE_SECRET` in `backend/.env` and `frontend/.env.local`
+- rotate `GOOGLE_CLIENT_SECRET` outside the repo before treating the branch as clean
 
 ## Tech Stack
 
@@ -124,4 +133,4 @@ Current branch verification:
 
 Known boundary:
 
-- `POST /api/auth/token` is still a development bridge, not the final production auth design
+- `POST /api/auth/token` now requires the shared bridge header for local/staging use, but it is still not the final production auth design

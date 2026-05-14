@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
+from secrets import compare_digest
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
 from jose import jwt
 
@@ -33,12 +34,23 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 
 @router.post("/token", response_model=TokenResponse)
-async def generate_token(token_request: TokenRequest, db: AsyncSession = Depends(get_db)):
+async def generate_token(
+    token_request: TokenRequest,
+    db: AsyncSession = Depends(get_db),
+    auth_bridge_secret: str | None = Header(default=None, alias="X-Auth-Bridge-Secret"),
+):
     """Generate a JWT token for a backend user.
 
     This is a development bridge used by the server-side NextAuth route.
     It should be replaced with a stronger production auth boundary before deploy.
     """
+    expected_secret = settings.resolved_auth_bridge_secret
+    if not auth_bridge_secret or not compare_digest(auth_bridge_secret, expected_secret):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid auth bridge credentials",
+        )
+
     result = await db.execute(select(User).where(User.id == token_request.user_id))
     user = result.scalars().first()
 

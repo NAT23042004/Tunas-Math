@@ -1,9 +1,14 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from litellm import acompletion
-
 from config import settings
+
+
+async def acompletion(*args: Any, **kwargs: Any) -> Any:
+    """Lazy LiteLLM import so non-LLM tests do not import dependency side effects."""
+    from litellm import acompletion as litellm_acompletion
+
+    return await litellm_acompletion(*args, **kwargs)
 
 
 class LLMClient:

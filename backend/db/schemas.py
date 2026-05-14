@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from uuid import UUID
@@ -40,13 +40,12 @@ class UserCreate(UserBase):
 
 
 class UserResponse(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     role: UserRole
     created_at: datetime
     last_active: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 
 # Problem Schemas
@@ -66,11 +65,10 @@ class ProblemCreate(ProblemBase):
 
 
 class ProblemResponse(ProblemBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 # Session Schemas
@@ -89,6 +87,8 @@ class SessionMessage(BaseModel):
 
 
 class SessionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     user_id: UUID
     topic_id: str
@@ -103,9 +103,6 @@ class SessionResponse(BaseModel):
     student_rating: Optional[int] = None
     started_at: datetime
     ended_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 
 class SessionComplete(BaseModel):
@@ -133,14 +130,13 @@ class MessageResponse(BaseModel):
 
 # Progress Schemas
 class ProgressResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     user_id: UUID
     topic_id: str
     mastery_score: float
     sessions_count: int
     last_practiced: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 
 class MasteryMapResponse(BaseModel):

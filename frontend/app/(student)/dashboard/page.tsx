@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import MasteryRadar from '@/components/MasteryRadar';
 import { useDashboard } from '@/lib/useDashboard';
 
@@ -12,7 +13,15 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <Link
+          href="/session/new"
+          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Bắt đầu phiên học
+        </Link>
+      </div>
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-lg border p-4">
           <h2 className="text-lg font-medium">Thành thạo theo chủ đề</h2>

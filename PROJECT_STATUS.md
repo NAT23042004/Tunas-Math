@@ -3,10 +3,10 @@
 ## Overall Status
 
 - Branch: `feat/sprint2-frontend`
-- Phase: Sprint 2 stabilization
-- State: core backend/frontend contracts are aligned and verified locally
+- Phase: Sprint 2 complete
+- State: core backend/frontend contracts are aligned, protected for local/staging, and verified locally through smoke and browser auth flows
 
-Sprint 2 is effectively implemented, but there is still one clear boundary: the backend JWT token route is a development bridge, not a production-grade auth exchange.
+Sprint 2 is effectively implemented, but there is still one clear boundary: the backend JWT token route is a protected local/staging bridge, not a production-grade auth exchange.
 
 ## What Is Working
 
@@ -28,6 +28,7 @@ Sprint 2 is effectively implemented, but there is still one clear boundary: the 
 - Next.js 14 App Router application
 - Google login via NextAuth
 - Backend JWT acquisition during auth flow
+- Backend JWT bridge protected by a shared server-side header
 - Session creation routed with the backend's actual response shape
 - SSE chat consumption aligned to backend event payloads
 - 3D geometry viewer and student session UI
@@ -44,6 +45,10 @@ Sprint 2 is effectively implemented, but there is still one clear boundary: the 
 - Fixed auth contract mismatch:
   - frontend now calls `POST /api/auth/token`
   - backend accepts `{ "user_id": ... }`
+- Hardened the token bridge:
+  - backend now requires `X-Auth-Bridge-Secret`
+  - frontend server auth route and `make smoke-local` send the shared secret
+- Replaced hard-coded CORS with `CORS_ORIGINS`
 - Fixed session creation contract mismatch:
   - frontend now uses backend `id` instead of nonexistent `session_id`
 - Fixed streaming contract mismatch:
@@ -54,11 +59,12 @@ Sprint 2 is effectively implemented, but there is still one clear boundary: the 
 
 ## Verification
 
-Verified locally on May 12, 2026:
+Verified locally on May 14, 2026:
 
 - `cd backend && uv run pytest tests -q`
 - `cd frontend && npm run lint`
 - `cd frontend && npm run build`
+- `make smoke-local`
 - live backend smoke path after DB initialization:
   - `GET /api/problems`
   - `POST /api/users`
@@ -66,6 +72,11 @@ Verified locally on May 12, 2026:
   - `POST /api/sessions`
   - `GET /api/sessions/{id}`
   - `PUT /api/sessions/{id}/complete`
+- browser Google OAuth path:
+  - login succeeds through NextAuth
+  - dashboard loads
+  - session creation works
+  - streamed chat path verified manually
 
 ## Required Local Backend Setup
 
@@ -81,13 +92,11 @@ Without that step, live API requests fail with missing-table errors from Postgre
 
 ## Known Gaps
 
-- The token route is still a dev bridge and should not be treated as a final production auth design.
+- The token route is still a local/staging bridge and should not be treated as a final production auth design.
 - Some dependency/config code still emits deprecation warnings from Pydantic v2 and SQLAlchemy.
-- Full browser-level end-to-end verification of the Google OAuth flow is still pending.
 
 ## Next Recommended Work
 
-1. Run a browser-level end-to-end smoke test across login, session start, chat streaming, and progress views.
-2. Replace the current backend JWT bridge with a trusted production auth exchange.
-3. Document the Postgres-backed backend test workflow and local service prerequisites.
-4. Clean up deprecation warnings once the product path is stable.
+1. Replace the current backend JWT bridge with a trusted production auth exchange in Sprint 3.
+2. Clean up remaining dependency deprecation warnings once the product path is stable.
+3. Expand automated coverage around the NextAuth bridge so the browser auth path has a regression check beyond manual smoke verification.

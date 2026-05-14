@@ -6,6 +6,27 @@ FRONTEND_URL="${FRONTEND_URL:-http://127.0.0.1:3000}"
 BACKEND_URL="${BACKEND_URL:-http://127.0.0.1:8000}"
 TOPIC_ID="${TOPIC_ID:-hinh-hoc.lang-tru}"
 
+trim_quotes() {
+  local value="$1"
+  value="${value%\"}"
+  value="${value#\"}"
+  value="${value%\'}"
+  value="${value#\'}"
+  printf '%s' "$value"
+}
+
+read_env_value() {
+  local file="$1"
+  local key="$2"
+  local line
+
+  [[ -f "$file" ]] || return 1
+  line="$(grep -E "^${key}=" "$file" | tail -n 1 || true)"
+  [[ -n "$line" ]] || return 1
+
+  trim_quotes "${line#*=}"
+}
+
 fail() {
   echo
   echo "Smoke check failed: $1" >&2
@@ -37,6 +58,24 @@ echo "Backend database OK"
 
 EMAIL="smoke-$(date +%s)@example.com"
 NAME="Smoke Test User"
+AUTH_BRIDGE_SECRET="${AUTH_BRIDGE_SECRET:-}"
+
+if [[ -z "$AUTH_BRIDGE_SECRET" ]]; then
+  AUTH_BRIDGE_SECRET="$(read_env_value "backend/.env" "AUTH_BRIDGE_SECRET" || true)"
+fi
+if [[ -z "$AUTH_BRIDGE_SECRET" ]]; then
+  AUTH_BRIDGE_SECRET="$(read_env_value "frontend/.env.local" "AUTH_BRIDGE_SECRET" || true)"
+fi
+if [[ -z "$AUTH_BRIDGE_SECRET" ]]; then
+  AUTH_BRIDGE_SECRET="${NEXTAUTH_SECRET:-}"
+fi
+if [[ -z "$AUTH_BRIDGE_SECRET" ]]; then
+  AUTH_BRIDGE_SECRET="$(read_env_value "backend/.env" "NEXTAUTH_SECRET" || true)"
+fi
+if [[ -z "$AUTH_BRIDGE_SECRET" ]]; then
+  AUTH_BRIDGE_SECRET="$(read_env_value "frontend/.env.local" "NEXTAUTH_SECRET" || true)"
+fi
+[[ -n "$AUTH_BRIDGE_SECRET" ]] || fail "missing auth bridge secret. Set AUTH_BRIDGE_SECRET first, or fall back to NEXTAUTH_SECRET in the shell, backend/.env, or frontend/.env.local."
 
 echo "==> Creating backend user"
 USER_JSON="$(curl -fsS \
@@ -50,6 +89,7 @@ echo "==> Minting backend token"
 TOKEN_JSON="$(curl -fsS \
   -X POST "$BACKEND_URL/api/auth/token" \
   -H 'Content-Type: application/json' \
+  -H "X-Auth-Bridge-Secret: $AUTH_BRIDGE_SECRET" \
   -d "{\"user_id\":\"$USER_ID\"}")"
 ACCESS_TOKEN="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["access_token"])' <<<"$TOKEN_JSON")"
 echo "Token minted"

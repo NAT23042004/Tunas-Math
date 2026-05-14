@@ -15,8 +15,10 @@ from db.schemas import (
     SessionCompleteResponse, MessageCreate
 )
 from ai.context_builder import SessionContextBuilder
+from ai.dialogue import DialogueState as AIState, DialogueStateMachine, HintLevel
 from ai.llm_client import llm_client
 from ai.prompts import format_system_prompt, GEOMETRY_TOOL
+from ai.turn_assessment import TurnAssessment, assess_student_turn
 
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
@@ -31,6 +33,47 @@ def _get_session_state_payload(session: Session) -> dict[str, int | str]:
         "hint_level": session.hint_level,
         "fail_count": session.fail_count,
     }
+
+
+def _build_dialogue_state_machine(session: Session) -> DialogueStateMachine:
+    machine = DialogueStateMachine()
+    machine.current_state = AIState(session.dialogue_state.value)
+    machine.fail_count = session.fail_count
+    machine.hint_level = HintLevel(session.hint_level)
+    return machine
+
+
+def _apply_turn_assessment(
+    session: Session,
+    assessment: TurnAssessment,
+    hint_requested: bool,
+) -> None:
+    machine = _build_dialogue_state_machine(session)
+
+    if assessment in (TurnAssessment.STUCK, TurnAssessment.INCORRECT):
+        machine.transition_to_rectify()
+        machine.fail_count = max(machine.fail_count, 1)
+    elif assessment == TurnAssessment.SOLVED:
+        machine.transition_to_summarize()
+    elif assessment == TurnAssessment.PROGRESSING:
+        if machine.current_state == AIState.REVIEW:
+            machine.transition_to_heuristic()
+        elif machine.current_state == AIState.RECTIFY:
+            machine.transition_back_to_heuristic()
+            machine.fail_count = 0
+        else:
+            machine.fail_count = 0
+    elif machine.current_state == AIState.REVIEW:
+        machine.transition_to_heuristic()
+
+    if hint_requested:
+        session.hint_count += 1
+        if machine.hint_level.value < 3:
+            machine.escalate_hint()
+
+    session.dialogue_state = DialogueState(machine.get_state().value)
+    session.fail_count = machine.get_fail_count()
+    session.hint_level = machine.get_hint_level().value
 
 
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
@@ -115,10 +158,18 @@ async def send_message(
         if problem:
             problem_context = {
                 "statement": problem.statement_latex,
+                "answer": problem.answer,
                 "difficulty": problem.difficulty.value,
                 "is_geometry": problem.is_geometry,
-                "geometry_params": problem.geometry_params
+                "geometry_params": problem.geometry_params,
+                "misconceptions": problem.misconceptions or [],
             }
+
+    turn_assessment = assess_student_turn(
+        message_data.content,
+        expected_answer=problem_context["answer"] if problem_context else None,
+    )
+    _apply_turn_assessment(session, turn_assessment, message_data.hint_requested)
 
     # Build context for AI
     context = context_builder.build_context(
@@ -158,7 +209,11 @@ async def send_message(
     try:
         if stream:
             return await stream_response(
-                llm_messages, system_prompt, tools, session, message_data, db
+                llm_messages=llm_messages,
+                system_prompt=system_prompt,
+                tools=tools,
+                session=session,
+                db=db,
             )
         else:
             if tools:
@@ -184,22 +239,12 @@ async def send_message(
             session.messages.append(ai_message)
             flag_modified(session, "messages")
 
-            # Update session state
-            if message_data.hint_requested:
-                session.hint_count += 1
-                if session.hint_level < 3:
-                    session.hint_level += 1
-
             await db.commit()
             await db.refresh(session)
 
             return {
                 "message": ai_message,
-                "session_state": {
-                    "dialogue_state": session.dialogue_state.value,
-                    "hint_level": session.hint_level,
-                    "fail_count": session.fail_count
-                }
+                "session_state": _get_session_state_payload(session)
             }
 
     except Exception as e:
@@ -209,7 +254,7 @@ async def send_message(
         )
 
 
-async def stream_response(llm_messages, system_prompt, tools, session, message_data, db):
+async def stream_response(llm_messages, system_prompt, tools, session, db):
     """Stream AI response using Server-Sent Events"""
 
     async def generate():
@@ -234,12 +279,6 @@ async def stream_response(llm_messages, system_prompt, tools, session, message_d
             }
             session.messages.append(ai_message)
             flag_modified(session, "messages")
-
-            # Update session state
-            if message_data.hint_requested:
-                session.hint_count += 1
-                if session.hint_level < 3:
-                    session.hint_level += 1
 
             await db.commit()
             await db.refresh(session)

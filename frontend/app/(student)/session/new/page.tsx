@@ -1,15 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { createSession } from '@/lib/api';
 
 export default function NewSessionPage() {
-  const [topicId, setTopicId] = useState('hinh-hoc.hinh-chop');
+  const searchParams = useSearchParams();
+  const [topicId, setTopicId] = useState(searchParams.get('topic') || 'hinh-hoc.hinh-chop');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { data: session, status } = useSession();
+
+  useEffect(() => {
+    const requestedTopic = searchParams.get('topic');
+    if (requestedTopic) {
+      setTopicId(requestedTopic);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     // Store user_id in localStorage when session is available
