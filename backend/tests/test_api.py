@@ -5,6 +5,8 @@ API endpoint tests for Toán Socratic backend
 import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
+from datetime import datetime, timedelta
+from datetime import time as dtime
 import pytest
 from fastapi import HTTPException
 from httpx import AsyncClient, ASGITransport
@@ -640,6 +642,46 @@ class TestSessionsEndpoints:
         assert len(data) == 1
         assert data[0]["id"] == str(sample_session.id)
 
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_list_sessions_omits_messages_but_detail_keeps_them(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        auth_headers: dict[str, str],
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        async with session_factory() as db:
+            session = await db.get(Session, sample_session.id)
+            session.messages = [
+                {
+                    "role": "user",
+                    "content": "Em nghi dap an la 12",
+                    "timestamp": datetime.utcnow().isoformat(),
+                },
+                {
+                    "role": "assistant",
+                    "content": "Em thu kiem tra lai tung buoc nhe.",
+                    "timestamp": datetime.utcnow().isoformat(),
+                },
+            ]
+            await db.commit()
+
+        list_response = await test_client.get("/api/sessions", headers=auth_headers)
+        assert list_response.status_code == 200
+        list_data = list_response.json()
+        assert len(list_data) == 1
+        assert "messages" not in list_data[0]
+
+        detail_response = await test_client.get(
+            f"/api/sessions/{sample_session.id}",
+            headers=auth_headers,
+        )
+        assert detail_response.status_code == 200
+        detail_data = detail_response.json()
+        assert len(detail_data["messages"]) == 2
+        assert detail_data["messages"][0]["role"] == "user"
+
 
 class TestProblemsEndpoints:
     """Test problems API endpoints"""
@@ -923,6 +965,34 @@ class TestAuthEndpoints:
 
 
 class TestProgressAndAdminEndpoints:
+    async def _create_completed_session(
+        self,
+        session_factory: async_sessionmaker[AsyncSession],
+        *,
+        user_id,
+        topic_id: str,
+        started_at: datetime,
+        ended_at: datetime | None = None,
+    ) -> Session:
+        async with session_factory() as db:
+            session = Session(
+                user_id=user_id,
+                topic_id=topic_id,
+                status=SessionStatus.COMPLETED,
+                dialogue_state=DialogueState.SUMMARIZE,
+                hint_level=0,
+                hint_count=0,
+                fail_count=0,
+                messages=[],
+                summary="Hoan thanh",
+                started_at=started_at,
+                ended_at=ended_at,
+            )
+            db.add(session)
+            await db.commit()
+            await db.refresh(session)
+            return session
+
     @pytest.mark.api
     @pytest.mark.asyncio
     async def test_complete_session_creates_progress(
@@ -1007,6 +1077,109 @@ class TestProgressAndAdminEndpoints:
 
     @pytest.mark.api
     @pytest.mark.asyncio
+    async def test_progress_counts_all_recent_sessions_when_more_than_thirty(
+        self,
+        test_client: AsyncClient,
+        sample_user: User,
+        auth_headers: dict[str, str],
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        today = datetime.utcnow().date()
+        for offset in range(35):
+            day_offset = offset % 7
+            started_at = datetime.combine(
+                today - timedelta(days=day_offset),
+                dtime(hour=12, minute=offset % 60),
+            )
+            await self._create_completed_session(
+                session_factory,
+                user_id=sample_user.id,
+                topic_id="hinh-hoc.hinh-chop",
+                started_at=started_at,
+                ended_at=started_at + timedelta(minutes=20),
+            )
+
+        response = await test_client.get("/api/progress/me", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["sessions_this_week"] == 35
+        assert sum(day["sessions"] for day in data["weekly_activity"]) == 35
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_progress_streak_uses_full_recent_dataset(
+        self,
+        test_client: AsyncClient,
+        sample_user: User,
+        auth_headers: dict[str, str],
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        today = datetime.utcnow().date()
+        for offset in range(31):
+            day_offset = offset % 6
+            started_at = datetime.combine(
+                today - timedelta(days=day_offset),
+                dtime(hour=12, minute=offset % 60),
+            )
+            await self._create_completed_session(
+                session_factory,
+                user_id=sample_user.id,
+                topic_id="hinh-hoc.hinh-chop",
+                started_at=started_at,
+                ended_at=started_at + timedelta(minutes=15),
+            )
+        started_at = datetime.combine(today - timedelta(days=6), dtime(hour=9, minute=0))
+        await self._create_completed_session(
+            session_factory,
+            user_id=sample_user.id,
+            topic_id="hinh-hoc.hinh-chop",
+            started_at=started_at,
+            ended_at=started_at + timedelta(minutes=15),
+        )
+
+        response = await test_client.get("/api/progress/me", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["streak_days"] == 7
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_progress_weekly_activity_matches_recent_completion_total(
+        self,
+        test_client: AsyncClient,
+        sample_user: User,
+        auth_headers: dict[str, str],
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        today = datetime.utcnow().date()
+        total_recent_sessions = 0
+
+        for day_offset in range(7):
+            sessions_for_day = day_offset + 1
+            total_recent_sessions += sessions_for_day
+            for session_index in range(sessions_for_day):
+                started_at = datetime.combine(
+                    today - timedelta(days=day_offset),
+                    dtime(hour=12, minute=session_index),
+                )
+                await self._create_completed_session(
+                    session_factory,
+                    user_id=sample_user.id,
+                    topic_id="giai-tich.dao-ham",
+                    started_at=started_at,
+                    ended_at=started_at + timedelta(minutes=10),
+                )
+
+        response = await test_client.get("/api/progress/me", headers=auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+
+        assert sum(day["sessions"] for day in data["weekly_activity"]) == total_recent_sessions
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
     async def test_admin_stats_forbidden_for_student(
         self,
         test_client: AsyncClient,
@@ -1035,6 +1208,38 @@ class TestProgressAndAdminEndpoints:
         data = response.json()
         assert data["total_users"] >= 2
         assert data["completed_sessions"] >= 1
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_admin_stats_active_students_excludes_admin_sessions(
+        self,
+        test_client: AsyncClient,
+        sample_user: User,
+        admin_user: User,
+        admin_auth_headers: dict[str, str],
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        now = datetime.utcnow().replace(microsecond=0)
+        await self._create_completed_session(
+            session_factory,
+            user_id=sample_user.id,
+            topic_id="hinh-hoc.hinh-chop",
+            started_at=now - timedelta(days=1),
+            ended_at=now - timedelta(days=1) + timedelta(minutes=30),
+        )
+        await self._create_completed_session(
+            session_factory,
+            user_id=admin_user.id,
+            topic_id="hinh-hoc.hinh-chop",
+            started_at=now - timedelta(days=1, hours=1),
+            ended_at=now - timedelta(days=1, hours=1) + timedelta(minutes=30),
+        )
+
+        response = await test_client.get("/api/admin/stats", headers=admin_auth_headers)
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["active_students"] == 1
 
 
 class TestCorsConfiguration:

@@ -105,6 +105,21 @@ class SessionResponse(BaseModel):
     ended_at: Optional[datetime] = None
 
 
+class SessionListItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    user_id: UUID
+    topic_id: str
+    problem_id: Optional[UUID] = None
+    status: SessionStatus
+    dialogue_state: DialogueState
+    summary: Optional[str] = None
+    student_rating: Optional[int] = None
+    started_at: datetime
+    ended_at: Optional[datetime] = None
+
+
 class SessionComplete(BaseModel):
     student_rating: Optional[int] = Field(None, ge=1, le=5)
 

@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta
+from collections import Counter
+from datetime import datetime, time, timedelta
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
@@ -37,32 +38,33 @@ async def _build_mastery_map(db: AsyncSession, user_id: UUID) -> dict:
 
     mastery_by_topic = {p.topic_id: p.mastery_score for p in progress_list}
 
-    one_week_ago = datetime.utcnow() - timedelta(days=7)
-    count_result = await db.execute(
-        select(func.count()).select_from(Session).where(
-            Session.user_id == user_id,
-            Session.started_at >= one_week_ago,
-            Session.status == SessionStatus.COMPLETED,
-        )
-    )
-    sessions_this_week = count_result.scalar() or 0
+    now = datetime.utcnow()
+    today = now.date()
+    recent_window_start = datetime.combine(today - timedelta(days=29), time.min)
+    completion_timestamp = func.coalesce(Session.ended_at, Session.started_at)
 
     dates_result = await db.execute(
-        select(Session.started_at).where(
+        select(completion_timestamp).where(
             Session.user_id == user_id,
             Session.status == SessionStatus.COMPLETED,
-        ).order_by(Session.started_at.desc()).limit(30)
+            completion_timestamp >= recent_window_start,
+        ).order_by(completion_timestamp.desc())
     )
-    session_dates = dates_result.scalars().all()
+    session_dates = list(dates_result.scalars().all())
+    session_counts_by_day = Counter(session_date.date() for session_date in session_dates)
+
+    week_start = today - timedelta(days=6)
+    sessions_this_week = sum(
+        count for day, count in session_counts_by_day.items() if day >= week_start
+    )
 
     weekly_activity = []
-    today = datetime.utcnow().date()
     for offset in range(6, -1, -1):
         day = today - timedelta(days=offset)
         weekly_activity.append(
             {
                 "date": day.isoformat(),
-                "sessions": sum(1 for session_date in session_dates if session_date.date() == day),
+                "sessions": session_counts_by_day.get(day, 0),
             }
         )
 
