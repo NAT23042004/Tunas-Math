@@ -18,6 +18,8 @@ This project runs the frontend with IPv4-first DNS resolution in the `npm` scrip
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+For the Sprint 2 local auth flow, keep `AUTH_BRIDGE_SECRET` in `frontend/.env.local` aligned with `backend/.env`. The server-side NextAuth route uses that shared secret when requesting the backend JWT bridge.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

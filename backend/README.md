@@ -109,7 +109,7 @@ uv run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 
 - `POST /api/auth/token` - Mint backend JWT for an existing user
 
-This route is currently used as a development bridge for the frontend auth flow. It should be replaced or hardened before production deployment.
+This route is currently used as a local/staging bridge for the server-side NextAuth flow. It now requires the `X-Auth-Bridge-Secret` header and should still be replaced with a production auth exchange in Sprint 3.
 
 ## Testing
 
@@ -166,7 +166,9 @@ See `.env.example` for all required environment variables:
 
 ### Other Configuration
 - `DATABASE_URL`: PostgreSQL connection string
+- `CORS_ORIGINS`: comma-separated frontend origins allowed by FastAPI CORS
 - `JWT_SECRET`: JWT secret key
+- `AUTH_BRIDGE_SECRET`: shared secret for the NextAuth-to-backend token bridge
 - `GOOGLE_CLIENT_ID/SECRET`: OAuth credentials
 - `NEXTAUTH_SECRET/URL`: NextAuth configuration
 
@@ -190,7 +192,7 @@ See `.env.example` for all required environment variables:
 
 Sprint 1 is complete, and Sprint 2 backend/frontend integration is stabilized locally.
 
-Verified locally:
+Verified locally on May 12, 2026:
 
 - `uv run pytest tests -q`
 - live requests for problems, user creation, token minting, session creation/fetch, and completion

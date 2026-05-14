@@ -1,8 +1,11 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
+const nextAuthDebug = process.env.NEXTAUTH_DEBUG === 'true';
+const authBridgeSecret = process.env.AUTH_BRIDGE_SECRET ?? process.env.NEXTAUTH_SECRET;
+
 const handler = NextAuth({
-  debug: process.env.NODE_ENV !== 'production',
+  debug: nextAuthDebug,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -11,19 +14,26 @@ const handler = NextAuth({
   ],
   secret: process.env.NEXTAUTH_SECRET,
   logger: {
-    error(code, metadata) {
-      console.error('[nextauth][error]', code, metadata);
+    error(code) {
+      console.error('[nextauth][error]', code);
     },
     warn(code) {
       console.warn('[nextauth][warn]', code);
     },
-    debug(code, metadata) {
-      console.log('[nextauth][debug]', code, metadata);
+    debug(code) {
+      if (nextAuthDebug) {
+        console.debug('[nextauth][debug]', code);
+      }
     },
   },
   callbacks: {
     async signIn({ user }) {
       try {
+        if (!authBridgeSecret) {
+          console.error('[nextauth][error]', 'Missing auth bridge secret');
+          return false;
+        }
+
         // Create or get user from backend
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
           method: 'POST',
@@ -37,8 +47,24 @@ const handler = NextAuth({
 
         if (response.ok) {
           const userData = await response.json();
-          // Store user_id in user object for JWT callback
+          const tokenRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/token`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-Bridge-Secret': authBridgeSecret,
+            },
+            body: JSON.stringify({ user_id: userData.id }),
+          });
+
+          if (!tokenRes.ok) {
+            return false;
+          }
+
+          const tokenData = await tokenRes.json();
+
+          // Store backend auth data for the JWT callback.
           (user as unknown as Record<string, unknown>).userId = userData.id;
+          (user as unknown as Record<string, unknown>).accessToken = tokenData.access_token;
           return true;
         }
         return false;
@@ -48,22 +74,8 @@ const handler = NextAuth({
     },
     async jwt({ token, user }) {
       if (user) {
-        const userId = (user as unknown as Record<string, unknown>).userId as string;
-        token.userId = userId;
-        // Fetch JWT token from backend
-        try {
-          const tokenRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/token`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ user_id: userId }),
-          });
-          if (tokenRes.ok) {
-            const tokenData = await tokenRes.json();
-            token.accessToken = tokenData.access_token;
-          }
-        } catch {
-          // Token fetch failed, continue without it
-        }
+        token.userId = (user as unknown as Record<string, unknown>).userId as string;
+        token.accessToken = (user as unknown as Record<string, unknown>).accessToken as string;
       }
       return token;
     },
