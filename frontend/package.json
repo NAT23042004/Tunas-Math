@@ -1,0 +1,44 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "NODE_OPTIONS=--dns-result-order=ipv4first next dev",
+    "build": "next build",
+    "start": "NODE_OPTIONS=--dns-result-order=ipv4first next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.18.0",
+    "@tanstack/react-query": "^5.100.9",
+    "axios": "^1.16.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "katex": "^0.16.45",
+    "next": "14.2.35",
+    "next-auth": "^4.24.14",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-katex": "^3.1.0",
+    "recharts": "^3.8.1",
+    "tailwind-merge": "^3.5.0",
+    "three": "^0.184.0",
+    "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.40",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
+    "@types/react-katex": "^3.0.4",
+    "@types/three": "^0.184.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}

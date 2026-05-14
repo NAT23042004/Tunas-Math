@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathVN — AI Builder Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a18;
+    --ink2: #3d3d38;
+    --ink3: #72726a;
+    --paper: #f7f5f0;
+    --paper2: #eeece6;
+    --paper3: #e4e1d8;
+    --accent: #c84b2f;
+    --accent2: #e8a030;
+    --teal: #1d7a68;
+    --blue: #2356a8;
+    --border: rgba(26,26,24,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Instrument Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.65;
+    font-size: 15px;
+  }
+  /* Cover */
+  .cover {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 72px 64px 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.12;
+  }
+  .cover-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 52px;
+    line-height: 1.1;
+    margin-bottom: 12px;
+    max-width: 560px;
+  }
+  .cover h1 em {
+    font-style: italic;
+    color: var(--accent2);
+  }
+  .cover-sub {
+    font-size: 16px;
+    color: rgba(247,245,240,0.6);
+    max-width: 480px;
+    margin-bottom: 40px;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 40px;
+    border-top: 1px solid rgba(247,245,240,0.15);
+    padding-top: 28px;
+  }
+  .cover-meta-item label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(247,245,240,0.4);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .cover-meta-item span {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--paper);
+  }
+  /* Step nav */
+  .step-nav {
+    background: var(--paper2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 64px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .step-nav a {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    text-decoration: none;
+    padding: 16px 20px;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: color .15s, border-color .15s;
+  }
+  .step-nav a:hover { color: var(--accent); border-color: var(--accent); }
+  /* Layout */
+  .container { max-width: 860px; margin: 0 auto; padding: 0 48px; }
+  /* Step sections */
+  .step-section {
+    padding: 64px 0 56px;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 36px;
+  }
+  .step-number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 64px;
+    line-height: 1;
+    color: var(--paper3);
+    flex-shrink: 0;
+    margin-top: -8px;
+    min-width: 56px;
+  }
+  .step-meta { flex: 1; }
+  .step-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .tag-red { color: var(--accent); }
+  .tag-amber { color: var(--accent2); }
+  .tag-teal { color: var(--teal); }
+  .tag-blue { color: var(--blue); }
+  .step-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .step-subtitle {
+    font-size: 14px;
+    color: var(--ink3);
+  }
+  /* Content blocks */
+  .block { margin-bottom: 28px; }
+  .block-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  p { color: var(--ink2); margin-bottom: 10px; }
+  p:last-child { margin-bottom: 0; }
+  /* Persona card */
+  .persona-card {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 12px;
+    padding: 28px 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .persona-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  .persona-card .sub { font-size: 12px; color: rgba(247,245,240,0.5); margin-bottom: 16px; }
+  .persona-detail { font-size: 13px; color: rgba(247,245,240,0.8); line-height: 1.6; }
+  .persona-detail strong { color: var(--accent2); font-weight: 500; }
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    text-align: left;
+    padding: 8px 12px;
+    background: var(--paper2);
+    border: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    color: var(--ink2);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: var(--paper2); }
+  /* User stories */
+  .story-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    background: white;
+  }
+  .story-role {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .story-text { font-size: 14px; color: var(--ink); line-height: 1.55; }
+  .story-text em { font-style: normal; font-weight: 500; color: var(--blue); }
+  /* Priority matrix */
+  .priority-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .priority-box {
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .pbox-must { background: #fff0ed; border: 1px solid #f5bdb3; }
+  .pbox-should { background: #fffaed; border: 1px solid #f5e0a0; }
+  .pbox-could { background: #edfaf6; border: 1px solid #a0ddc9; }
+  .pbox-wont { background: var(--paper2); border: 1px solid var(--border); }
+  .priority-box h4 {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .pbox-must h4 { color: var(--accent); }
+  .pbox-should h4 { color: #b07500; }
+  .pbox-could h4 { color: var(--teal); }
+  .pbox-wont h4 { color: var(--ink3); }
+  .priority-box ul { list-style: none; }
+  .priority-box li {
+    font-size: 13px;
+    color: var(--ink2);
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    line-height: 1.45;
+  }
+  .priority-box li:last-child { border-bottom: none; }
+  /* Data pipeline */
+  .pipeline-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+  .pipeline-row:last-child { border-bottom: none; }
+  .pipeline-source {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink);
+    padding-top: 2px;
+  }
+  .pipeline-detail { font-size: 13px; color: var(--ink2); line-height: 1.5; }
+  /* Architecture */
+  .arch-diagram {
+    background: var(--ink);
+    border-radius: 12px;
+    padding: 32px;
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+  .arch-layer {
+    margin-bottom: 20px;
+  }
+  .arch-layer:last-child { margin-bottom: 0; }
+  .arch-layer-label {
+    font-size: 9px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(247,245,240,0.35);
+    margin-bottom: 8px;
+  }
+  .arch-boxes {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .arch-box {
+    border: 1px solid rgba(247,245,240,0.15);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: rgba(247,245,240,0.85);
+  }
+  .arch-box.accent { border-color: var(--accent); color: var(--accent2); }
+  .arch-box.teal { border-color: var(--teal); color: #6fceba; }
+  .arch-box.blue { border-color: #4476c4; color: #93b7f0; }
+  .arch-arrow {
+    text-align: center;
+    color: rgba(247,245,240,0.2);
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+  /* Sprint cards */
+  .sprint-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .sprint-card {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .sprint-head {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sprint-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+  }
+  .sprint-info {}
+  .sprint-name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .sprint-week {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    opacity: .7;
+  }
+  .sprint-body {
+    padding: 14px 18px;
+    background: white;
+  }
+  .sprint-body ul { list-style: none; }
+  .sprint-body li {
+    font-size: 13px;
+    color: var(--ink2);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.45;
+  }
+  .sprint-body li:last-child { border-bottom: none; }
+  .sprint-body li::before { content: "▸ "; color: var(--ink3); font-size: 10px; }
+  .s1 .sprint-head { background: #fff0ed; }
+  .s1 .sprint-num { color: var(--accent); }
+  .s1 .sprint-name { color: var(--accent); }
+  .s2 .sprint-head { background: #fffaed; }
+  .s2 .sprint-num { color: #b07500; }
+  .s2 .sprint-name { color: #b07500; }
+  .s3 .sprint-head { background: #edfaf6; }
+  .s3 .sprint-num { color: var(--teal); }
+  .s3 .sprint-name { color: var(--teal); }
+  .s4 .sprint-head { background: #edf2fc; }
+  .s4 .sprint-num { color: var(--blue); }
+  .s4 .sprint-name { color: var(--blue); }
+  /* Deploy */
+  .deploy-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .deploy-card {
+    background: var(--paper2);
+    border-radius: 10px;
+    padding: 18px;
+    border: 1px solid var(--border);
+  }
+  .deploy-icon {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+  .deploy-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 6px;
+    letter-spacing: .04em;
+  }
+  .deploy-desc { font-size: 12px; color: var(--ink3); line-height: 1.5; }
+  /* Demo */
+  .demo-flow {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    margin-bottom: 24px;
+  }
+  .demo-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+  .demo-step::after {
+    content: '→';
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink3);
+    font-size: 14px;
+  }
+  .demo-step:last-child::after { display: none; }
+  .demo-step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 6px;
+  }
+  .demo-step-label { font-size: 12px; color: var(--ink2); line-height: 1.35; }
+  /* Checklist */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+    color: var(--ink2);
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-box {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  /* Schema */
+  .schema-table {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    background: var(--ink);
+    border-radius: 10px;
+    padding: 20px 24px;
+    color: var(--paper);
+    margin-bottom: 10px;
+  }
+  .schema-table .table-name {
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 10px;
+  }
+  .schema-row {
+    display: flex;
+    gap: 16px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(247,245,240,0.08);
+    font-size: 12px;
+  }
+  .schema-row:last-child { border-bottom: none; }
+  .schema-field { color: rgba(247,245,240,0.85); width: 140px; }
+  .schema-type { color: #93b7f0; width: 80px; }
+  .schema-note { color: rgba(247,245,240,0.4); }
+  /* Footer */
+  .footer {
+    background: var(--ink);
+    color: rgba(247,245,240,0.4);
+    padding: 32px 64px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .04em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0;
+  }
+  .footer span { color: var(--accent2); }
+  /* Highlight box */
+  .highlight {
+    background: #fff0ed;
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    color: var(--ink2);
+    margin-bottom: 20px;
+  }
+  .highlight strong { color: var(--accent); }
+  /* API spec */
+  .api-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .api-row:last-child { border-bottom: none; }
+  .api-method {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 42px;
+    text-align: center;
+  }
+  .method-post { background: #fff0ed; color: var(--accent); }
+  .method-get { background: #edfaf6; color: var(--teal); }
+  .method-put { background: #fffaed; color: #b07500; }
+  .api-path { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--blue); min-width: 240px; }
+  .api-desc { color: var(--ink3); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <div class="cover-tag">AI Builder Flow — Full Project Plan</div>
+  <h1>Toán <em>Socratic</em><br>Learning Platform</h1>
+  <p class="cover-sub">A 7-step plan to design, build, and deploy an AI-powered Vietnamese math tutor for Grade 12 students — applying the Socratic method with interactive 3D visualization.</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><label>Target users</label><span>Grade 12 students (VN)</span></div>
+    <div class="cover-meta-item"><label>Core AI feature</label><span>Socratic dialogue engine</span></div>
+    <div class="cover-meta-item"><label>Differentiator</label><span>3D geometry visualizer</span></div>
+    <div class="cover-meta-item"><label>Build timeline</label><span>4 sprints (~8 weeks)</span></div>
+  </div>
+</div>
+
+<!-- Step navigation -->
+<nav class="step-nav">
+  <a href="#step1">01 Brief</a>
+  <a href="#step2">02 PRD</a>
+  <a href="#step3">03 Data</a>
+  <a href="#step4">04 Architecture</a>
+  <a href="#step5">05 Build</a>
+  <a href="#step6">06 Deploy</a>
+  <a href="#step7">07 Demo</a>
+</nav>
+
+<div class="container">
+
+<!-- Step 1 -->
+<section class="step-section" id="step1">
+  <div class="step-header">
+    <div class="step-number">01</div>
+    <div class="step-meta">
+      <div class="step-tag tag-red">Problem Brief</div>
+      <h2 class="step-title">Understand the user before writing code</h2>
+      <p class="step-subtitle">Define who we're building for, what pain we're solving, and how we're different from what already exists.</p>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">User Persona</div>
+    <div class="persona-card">
+      <div>
+        <h3>Nguyễn Minh Khoa</h3>
+        <p class="sub">Grade 12 student · Hanoi or HCMC · 17 years old</p>
+        <div class="persona-detail">
+          <strong>Daily problem:</strong> Struggles to understand <em>why</em> math solutions work, not just how to execute them. Has access to answer keys and worked solutions but cannot bridge the gap between a memorized procedure and a problem he hasn't seen before.
+          <br><br>
+          <strong>Context:</strong> Preparing for the THPT national exam. Uses Zalo, YouTube, and Tiktok daily. Studies 2–3 hours per night. Already uses HOCMAI or Vuihoc for video lessons but feels passive — he watches but doesn't understand deeply.
+          <br><br>
+          <strong>3D geometry pain:</strong> Cannot visualize solids from flat diagrams. When a problem says "a pyramid with apex S and base ABCD…" he draws something wrong, then the whole solution collapses.
+        </div>
+      </div>
+      <div>
+        <h3>Trần Thị Lan</h3>
+        <p class="sub">Grade 12 student · Provincial city · 17 years old</p>
+        <div class="persona-detail">
+          <strong>Daily problem:</strong> Has no access to quality tutors. Family can't afford premium tutoring centers. Relies entirely on self-study with textbooks. When stuck, she watches YouTube videos but generic content isn't aligned to her specific curriculum gap.
+          <br><br>
+          <strong>Context:</strong> Self-motivated but isolated. Needs a patient, always-available tutor who won't make her feel judged for asking "dumb questions." Mobile-first — her phone is her primary device.
+          <br><br>
+          <strong>Willingness to pay:</strong> Low individually; but if the platform is good enough, parents will pay — they already spend heavily on education.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Problem Statement</div>
+    <p>Vietnamese Grade 12 students preparing for the THPT exam have access to video lessons and answer keys, but no tool that <em>actively teaches</em> them to reason — the skill the new exam format now explicitly tests. They can memorize procedures but cannot think flexibly under novel problem conditions.</p>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Competitor Analysis</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Does well</th>
+          <th>Falls short</th>
+          <th>Our edge</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>HOCMAI / Vuihoc</strong></td>
+          <td>Large content library, THPT-aligned video lessons, trusted brand</td>
+          <td>Passive video watching; no dialogue; no adaptive feedback; no visualization</td>
+          <td>Active Socratic dialogue vs. passive video</td>
+        </tr>
+        <tr>
+          <td><strong>Photomath / Socratic App</strong></td>
+          <td>Instant step-by-step solutions, photo input, free</td>
+          <td>Hands answers — kills reasoning development; not Vietnamese; no 3D</td>
+          <td>Guides to answer vs. giving it; curriculum-specific</td>
+        </tr>
+        <tr>
+          <td><strong>ChatGPT / Gemini</strong></td>
+          <td>Flexible, can explain concepts, multilingual</td>
+          <td>Not aligned to THPT; tendency to give full solutions; no visualization; no session structure</td>
+          <td>Structured Socratic loop + integrated 3D visualizer</td>
+        </tr>
+        <tr>
+          <td><strong>Khan Academy / Khanmigo</strong></td>
+          <td>Excellent Socratic AI tutor, proven pedagogy</td>
+          <td>No Vietnamese language; not aligned to THPT; no 3D geometry focus</td>
+          <td>Vietnamese, THPT-specific, 3D-first for geometry</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Step 2 -->
+<section class="step-section" id="step2">
+  <div class="step-header">
+    <div class="step-number">02</div>
+    <div class="step-meta">
+      <div class="step-tag tag-amber">PRD — Product Requirements</div>
+      <h2 class="step-title">Turn the brief into a concrete spec</h2>
+      <p class="step-subtitle">User stories, feature priorities, and wireframe descriptions that define what we build and in what order.</p>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">User Stories</div>
+    <div class="story-card">
+      <div class="story-role">Student</div>
+      <p class="story-text">As a Grade 12 student, I want to <em>ask a math question in Vietnamese and receive guiding questions back</em> — not a direct answer — so that I arrive at the solution myself and actually understand it.</p>
+    </div>
+    <div class="story-card">
+      <div class="story-role">Student</div>
+      <p class="story-text">As a student struggling with 3D geometry, I want to <em>interact with a rotatable 3D model of the solid in my problem</em> so that I can see spatial relationships I couldn't imagine from the flat diagram.</p>
+    </div>
+    <div class="story-card">
+      <div class="story-role">Student</div>
+      <p class="story-text">As a student with a specific weak topic (e.g. limits, trigonometry), I want the platform to <em>identify my gap from my conversation history</em> and suggest focused practice sessions so I'm not wasting time on things I already know.</p>
+    </div>
+    <div class="story-card">
+      <div class="story-role">Student</div>
+      <p class="story-text">As a student on my phone, I want to <em>take a photo of a textbook problem</em> and start a Socratic session on it so I don't have to retype the problem manually.</p>
+    </div>
+    <div class="story-card">
+      <div class="story-role">Admin / Teacher</div>
+      <p class="story-text">As an admin, I want to <em>view aggregate usage data and common error patterns</em> across student sessions so I can improve the AI's dialogue quality over time.</p>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Feature Priority Matrix (MoSCoW)</div>
+    <div class="priority-grid">
+      <div class="priority-box pbox-must">
+        <h4>Must have — MVP</h4>
+        <ul>
+          <li>Socratic dialogue engine (Vietnamese)</li>
+          <li>THPT Grade 12 curriculum scope</li>
+          <li>Session history & continuity</li>
+          <li>3D geometry visualizer (pyramids, prisms, spheres)</li>
+          <li>User auth (register / login)</li>
+          <li>Topic selection & session start flow</li>
+        </ul>
+      </div>
+      <div class="priority-box pbox-should">
+        <h4>Should have — v1.1</h4>
+        <ul>
+          <li>Photo / OCR problem input</li>
+          <li>Weakness detection & topic suggestions</li>
+          <li>Progress / concept mastery map</li>
+          <li>Math formula rendering (KaTeX)</li>
+          <li>Hint escalation system (3 levels)</li>
+        </ul>
+      </div>
+      <div class="priority-box pbox-could">
+        <h4>Could have — v2</h4>
+        <ul>
+          <li>Worked example library (post-Socratic)</li>
+          <li>Parent dashboard</li>
+          <li>Teacher / class management</li>
+          <li>Gamification (streaks, badges)</li>
+          <li>Grade 10–11 expansion</li>
+        </ul>
+      </div>
+      <div class="priority-box pbox-wont">
+        <h4>Won't build yet</h4>
+        <ul>
+          <li>Exam mode / mock tests</li>
+          <li>Peer collaboration</li>
+          <li>Live video tutoring</li>
+          <li>Native mobile app</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Wireframe Descriptions — Core Screens</div>
+    <table>
+      <thead>
+        <tr><th>Screen</th><th>Layout description</th><th>Key interactions</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Home / Topic picker</strong></td>
+          <td>Grid of math topic cards (Giải tích, Hình học, Xác suất…). Each card shows topic name, chapter count, and a difficulty badge. Search bar at top.</td>
+          <td>Tap a card → chapter list → problem picker or free-ask entry</td>
+        </tr>
+        <tr>
+          <td><strong>Chat / Socratic session</strong></td>
+          <td>Split layout: left 60% is conversation thread (student messages right, AI messages left with a distinctive style). Right 40% is context panel — shows LaTeX-rendered problem statement, a visualization pane (3D or graph), and session progress.</td>
+          <td>Type or speak message; request hint; trigger visualizer; end session</td>
+        </tr>
+        <tr>
+          <td><strong>3D Geometry viewer</strong></td>
+          <td>Full-width interactive Three.js canvas. Controls: rotate (drag), zoom (scroll), slice plane (slider), show/hide labels, step-by-step construction mode (plays through drawing the figure).</td>
+          <td>Triggered inline from chat when a geometry problem is detected; can also open standalone</td>
+        </tr>
+        <tr>
+          <td><strong>Session summary</strong></td>
+          <td>Card showing: concept identified, questions asked by AI, moments of breakthrough (where student got it right after hints), suggested next topic. Option to review conversation.</td>
+          <td>Save to history; start related session; share with teacher</td>
+        </tr>
+        <tr>
+          <td><strong>Dashboard (student)</strong></td>
+          <td>Left sidebar navigation. Main area: weekly activity chart, mastery radar chart across 6 main topic groups, recently studied, and AI-suggested next session.</td>
+          <td>Click topic in radar → go to topic; click session in history → review transcript</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Step 3 -->
+<section class="step-section" id="step3">
+  <div class="step-header">
+    <div class="step-number">03</div>
+    <div class="step-meta">
+      <div class="step-tag tag-teal">Data Collection & Preparation</div>
+      <h2 class="step-title">Source and structure the data the AI needs</h2>
+      <p class="step-subtitle">Raw data is never ready. Every input needs collection, cleaning, and validation before it powers the AI.</p>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <strong>Strategy:</strong> Start with a small, high-quality synthetic dataset to validate the Socratic dialogue engine. Don't wait for "real data" to start building — real data follows the working product.
+  </div>
+
+  <div class="block">
+    <div class="block-label">Data Pipeline</div>
+    <div class="pipeline-row">
+      <div class="pipeline-source">Curriculum scope</div>
+      <div class="pipeline-detail"><strong>Source:</strong> Vietnam Ministry of Education Grade 12 Math syllabus (publicly available). <strong>Action:</strong> Extract topic tree (chapters → concepts → problem types) and encode as structured JSON. This becomes the navigation schema for the entire app.</div>
+    </div>
+    <div class="pipeline-row">
+      <div class="pipeline-source">Problem bank</div>
+      <div class="pipeline-detail"><strong>Source:</strong> THPT past exam papers (2018–2025), textbook exercises (Sách giáo khoa Toán 12). <strong>Action:</strong> Manually curate 200–300 high-quality problems, tag each by topic, subtopic, difficulty, and problem type. Store as structured JSON with LaTeX-formatted expressions.</div>
+    </div>
+    <div class="pipeline-row">
+      <div class="pipeline-source">Socratic dialogues</div>
+      <div class="pipeline-detail"><strong>Source:</strong> Synthetic generation using Claude API. <strong>Action:</strong> For each problem in the bank, generate 3–5 Socratic dialogue examples — AI asks guiding questions, student makes mistakes, AI rectifies without giving the answer. Use as few-shot examples in the system prompt. Target: 500–1000 dialogue turns before launch.</div>
+    </div>
+    <div class="pipeline-row">
+      <div class="pipeline-source">3D geometry models</div>
+      <div class="pipeline-detail"><strong>Source:</strong> Procedurally generated using Three.js + code. <strong>Action:</strong> For each geometry problem type (pyramid, prism, cone, sphere, composite solids), write parameterized renderers that generate the 3D model from problem data (dimensions, labels, relationships). No static models — everything generated from parameters.</div>
+    </div>
+    <div class="pipeline-row">
+      <div class="pipeline-source">Common misconceptions</div>
+      <div class="pipeline-detail"><strong>Source:</strong> Teacher interviews (3–5 math teachers), Vietnamese math forums (toán học tuổi thơ), THPT exam analysis reports. <strong>Action:</strong> Catalog the 30–50 most common student errors per topic. Feed into AI system prompt as "known mistakes to watch for." This is what makes the Socratic tutoring feel smart.</div>
+    </div>
+    <div class="pipeline-row">
+      <div class="pipeline-source">User session logs</div>
+      <div class="pipeline-detail"><strong>Source:</strong> Collected once the platform launches (pilot users). <strong>Action:</strong> Log conversation turns, topics, hint requests, session duration, and post-session ratings. Used iteratively to improve dialogue quality. Start logging from day one — data is an asset.</div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Validation Rules</div>
+    <table>
+      <thead>
+        <tr><th>Data type</th><th>Validation check</th><th>Rejection criteria</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Problem bank</td><td>LaTeX renders without error; topic tag exists in curriculum tree; answer is verified</td><td>Ambiguous problem statement; missing tags; unverified answer</td></tr>
+        <tr><td>Synthetic dialogues</td><td>AI never reveals the full solution in a single turn; at least 3 Socratic turns before answer is reachable</td><td>Dialogue that hands the answer; dialogue with hallucinated math steps</td></tr>
+        <tr><td>3D models</td><td>Model loads in < 1s on mobile; all labels visible; dimensions match problem parameters</td><td>Rendering error; label overlap; mismatched dimensions</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Step 4 -->
+<section class="step-section" id="step4">
+  <div class="step-header">
+    <div class="step-number">04</div>
+    <div class="step-meta">
+      <div class="step-tag tag-blue">Architecture & Tech Stack</div>
+      <h2 class="step-title">Design the full system before writing code</h2>
+      <p class="step-subtitle">Frontend, backend, AI pipeline, database, and auth — every layer decided before implementation begins.</p>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">System Architecture</div>
+    <div class="arch-diagram">
+      <div class="arch-layer">
+        <div class="arch-layer-label">Frontend — Client</div>
+        <div class="arch-boxes">
+          <div class="arch-box accent">Next.js 14 (React)</div>
+          <div class="arch-box accent">Three.js — 3D visualizer</div>
+          <div class="arch-box accent">KaTeX — math rendering</div>
+          <div class="arch-box accent">Tailwind CSS</div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓ REST / WebSocket ↓</div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Backend — API Server</div>
+        <div class="arch-boxes">
+          <div class="arch-box blue">FastAPI (Python)</div>
+          <div class="arch-box blue">Auth: NextAuth / JWT</div>
+          <div class="arch-box blue">Session manager</div>
+          <div class="arch-box blue">Problem resolver</div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓ SDK calls ↓</div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">AI Pipeline</div>
+        <div class="arch-boxes">
+          <div class="arch-box teal">Claude API (claude-sonnet-4-6)</div>
+          <div class="arch-box teal">Socratic system prompt</div>
+          <div class="arch-box teal">RAG — problem context injection</div>
+          <div class="arch-box teal">Misconception catalog</div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓ Read / Write ↓</div>
+      <div class="arch-layer">
+        <div class="arch-layer-label">Database & Storage</div>
+        <div class="arch-boxes">
+          <div class="arch-box">PostgreSQL — users, sessions, progress</div>
+          <div class="arch-box">Pinecone / pgvector — problem embeddings</div>
+          <div class="arch-box">S3 / Cloudflare R2 — assets</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Tech Stack Rationale</div>
+    <table>
+      <thead>
+        <tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Frontend framework</td><td>Next.js 14</td><td>SSR for SEO; App Router for clean layout nesting; strong React ecosystem for Three.js and KaTeX integration</td></tr>
+        <tr><td>3D rendering</td><td>Three.js</td><td>Best-in-class WebGL; procedural geometry from parameters; works in browser without install</td></tr>
+        <tr><td>Math rendering</td><td>KaTeX</td><td>Faster than MathJax; inline rendering in chat bubbles; Vietnamese-compatible</td></tr>
+        <tr><td>Backend</td><td>FastAPI (Python)</td><td>Easy Claude SDK integration; async streaming; fast prototyping; team likely Python-fluent</td></tr>
+        <tr><td>AI model</td><td>Claude claude-sonnet-4-6</td><td>Strong reasoning for math; excellent Vietnamese; streaming responses; tool use for visualizer triggers</td></tr>
+        <tr><td>Database</td><td>PostgreSQL + pgvector</td><td>Relational for users/sessions; vector search for similar problem retrieval without separate infra</td></tr>
+        <tr><td>Auth</td><td>NextAuth.js</td><td>Easy Google/Facebook OAuth; Vietnamese students already have Google accounts; JWT session handling</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Database Schema (core tables)</div>
+    <div class="schema-table">
+      <div class="table-name">users</div>
+      <div class="schema-row"><span class="schema-field">id</span><span class="schema-type">uuid PK</span><span class="schema-note">primary key</span></div>
+      <div class="schema-row"><span class="schema-field">name</span><span class="schema-type">text</span><span class="schema-note">display name</span></div>
+      <div class="schema-row"><span class="schema-field">email</span><span class="schema-type">text</span><span class="schema-note">unique, indexed</span></div>
+      <div class="schema-row"><span class="schema-field">role</span><span class="schema-type">enum</span><span class="schema-note">student | admin</span></div>
+      <div class="schema-row"><span class="schema-field">created_at</span><span class="schema-type">timestamp</span><span class="schema-note"></span></div>
+    </div>
+    <div class="schema-table">
+      <div class="table-name">sessions</div>
+      <div class="schema-row"><span class="schema-field">id</span><span class="schema-type">uuid PK</span><span class="schema-note"></span></div>
+      <div class="schema-row"><span class="schema-field">user_id</span><span class="schema-type">uuid FK</span><span class="schema-note">→ users</span></div>
+      <div class="schema-row"><span class="schema-field">topic_id</span><span class="schema-type">text</span><span class="schema-note">e.g. "hinh-hoc.hinh-chop"</span></div>
+      <div class="schema-row"><span class="schema-field">problem_id</span><span class="schema-type">uuid FK</span><span class="schema-note">→ problems (nullable)</span></div>
+      <div class="schema-row"><span class="schema-field">messages</span><span class="schema-type">jsonb</span><span class="schema-note">full conversation array</span></div>
+      <div class="schema-row"><span class="schema-field">status</span><span class="schema-type">enum</span><span class="schema-note">active | completed | abandoned</span></div>
+      <div class="schema-row"><span class="schema-field">hint_count</span><span class="schema-type">int</span><span class="schema-note">how many hints were requested</span></div>
+      <div class="schema-row"><span class="schema-field">started_at / ended_at</span><span class="schema-type">timestamp</span><span class="schema-note"></span></div>
+    </div>
+    <div class="schema-table">
+      <div class="table-name">problems</div>
+      <div class="schema-row"><span class="schema-field">id</span><span class="schema-type">uuid PK</span><span class="schema-note"></span></div>
+      <div class="schema-row"><span class="schema-field">topic_id</span><span class="schema-type">text</span><span class="schema-note">curriculum tree reference</span></div>
+      <div class="schema-row"><span class="schema-field">statement_latex</span><span class="schema-type">text</span><span class="schema-note">KaTeX-formatted problem</span></div>
+      <div class="schema-row"><span class="schema-field">difficulty</span><span class="schema-type">enum</span><span class="schema-note">easy | medium | hard</span></div>
+      <div class="schema-row"><span class="schema-field">geometry_params</span><span class="schema-type">jsonb</span><span class="schema-note">null if not geometry; else 3D model params</span></div>
+      <div class="schema-row"><span class="schema-field">answer</span><span class="schema-type">text</span><span class="schema-note">verified answer (not shown to student)</span></div>
+      <div class="schema-row"><span class="schema-field">embedding</span><span class="schema-type">vector(1536)</span><span class="schema-note">pgvector for similarity search</span></div>
+    </div>
+    <div class="schema-table">
+      <div class="table-name">progress</div>
+      <div class="schema-row"><span class="schema-field">user_id</span><span class="schema-type">uuid FK</span><span class="schema-note">→ users</span></div>
+      <div class="schema-row"><span class="schema-field">topic_id</span><span class="schema-type">text</span><span class="schema-note">curriculum node</span></div>
+      <div class="schema-row"><span class="schema-field">mastery_score</span><span class="schema-type">float</span><span class="schema-note">0.0 – 1.0, updated per session</span></div>
+      <div class="schema-row"><span class="schema-field">sessions_count</span><span class="schema-type">int</span><span class="schema-note"></span></div>
+      <div class="schema-row"><span class="schema-field">last_practiced</span><span class="schema-type">timestamp</span><span class="schema-note">for spaced repetition suggestions</span></div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">API Endpoints (core)</div>
+    <div class="api-row"><span class="api-method method-post">POST</span><span class="api-path">/api/sessions</span><span class="api-desc">Start a new Socratic session for a topic/problem</span></div>
+    <div class="api-row"><span class="api-method method-post">POST</span><span class="api-path">/api/sessions/:id/message</span><span class="api-desc">Send student message, receive streaming AI response</span></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><span class="api-path">/api/sessions/:id</span><span class="api-desc">Retrieve session history and status</span></div>
+    <div class="api-row"><span class="api-method method-put">PUT</span><span class="api-path">/api/sessions/:id/complete</span><span class="api-desc">Mark session complete, update progress scores</span></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><span class="api-path">/api/problems?topic=&difficulty=</span><span class="api-desc">Fetch problems filtered by topic and difficulty</span></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><span class="api-path">/api/progress/:userId</span><span class="api-desc">Get full mastery map for a user</span></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><span class="api-path">/api/geometry/:problemId</span><span class="api-desc">Return 3D model parameters for a geometry problem</span></div>
+    <div class="api-row"><span class="api-method method-get">GET</span><span class="api-path">/api/admin/stats</span><span class="api-desc">Admin: usage analytics, common errors, session metrics</span></div>
+  </div>
+</section>
+
+<!-- Step 5 -->
+<section class="step-section" id="step5">
+  <div class="step-header">
+    <div class="step-number">05</div>
+    <div class="step-meta">
+      <div class="step-tag tag-red">Build — Sprint Plan</div>
+      <h2 class="step-title">Ship incrementally. AI feature first, UI second.</h2>
+      <p class="step-subtitle">Four focused sprints, each building on the last. A working demo exists at the end of every sprint.</p>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <strong>Rule:</strong> Sprint 1 is AI-only. Do not spend any time on UI polish in Sprint 1. A CLI or raw API test that proves the Socratic dialogue works is worth more than a beautiful interface on top of a broken AI.
+  </div>
+
+  <div class="sprint-grid">
+    <div class="sprint-card s1">
+      <div class="sprint-head">
+        <div class="sprint-num">1</div>
+        <div class="sprint-info">
+          <div class="sprint-name">Socratic AI engine</div>
+          <div class="sprint-week">Weeks 1–2</div>
+        </div>
+      </div>
+      <div class="sprint-body">
+        <ul>
+          <li>Design Socratic system prompt in Vietnamese</li>
+          <li>Implement dialogue state machine (review → hint → rectify → summarize)</li>
+          <li>Integrate Claude API with streaming</li>
+          <li>Build problem context injection (RAG from problem bank)</li>
+          <li>Load misconception catalog into system prompt</li>
+          <li>Test: 10+ complete Socratic sessions via CLI/Postman</li>
+          <li><strong>Gate:</strong> AI never reveals full answer in 1 turn ✓</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sprint-card s2">
+      <div class="sprint-head">
+        <div class="sprint-num">2</div>
+        <div class="sprint-info">
+          <div class="sprint-name">Core UI + 3D viewer + Auth</div>
+          <div class="sprint-week">Weeks 3–4</div>
+        </div>
+      </div>
+      <div class="sprint-body">
+        <ul>
+          <li>Next.js project setup + Tailwind + KaTeX</li>
+          <li>Auth flow: Google OAuth via NextAuth</li>
+          <li>Chat UI with streaming AI responses</li>
+          <li>Three.js 3D geometry viewer (pyramid, prism, sphere)</li>
+          <li>Topic picker and problem selector screens</li>
+          <li>PostgreSQL + session persistence</li>
+          <li><strong>Gate:</strong> End-to-end session works in browser ✓</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sprint-card s3">
+      <div class="sprint-head">
+        <div class="sprint-num">3</div>
+        <div class="sprint-info">
+          <div class="sprint-name">Progress, roles & polish</div>
+          <div class="sprint-week">Weeks 5–6</div>
+        </div>
+      </div>
+      <div class="sprint-body">
+        <ul>
+          <li>Student dashboard with mastery radar chart</li>
+          <li>Session summary screen (post-session review)</li>
+          <li>Admin dashboard: usage stats, error patterns</li>
+          <li>Hint escalation system (3 levels of help)</li>
+          <li>Progress tracking and mastery score updates</li>
+          <li>Mobile-responsive layout</li>
+          <li><strong>Gate:</strong> Two roles work; data persists ✓</li>
+        </ul>
+      </div>
+    </div>
+    <div class="sprint-card s4">
+      <div class="sprint-head">
+        <div class="sprint-num">4</div>
+        <div class="sprint-info">
+          <div class="sprint-name">UX polish, testing & launch prep</div>
+          <div class="sprint-week">Weeks 7–8</div>
+        </div>
+      </div>
+      <div class="sprint-body">
+        <ul>
+          <li>Full mobile responsiveness pass</li>
+          <li>Error state handling (API failures, empty states)</li>
+          <li>Loading states and skeleton screens</li>
+          <li>Performance: lazy-load 3D viewer, optimize bundle</li>
+          <li>5–10 real student pilot users → collect feedback</li>
+          <li>Bug fixes from pilot feedback</li>
+          <li><strong>Gate:</strong> Pilot users return for a second session ✓</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="block" style="margin-top: 28px;">
+    <div class="block-label">Git & Code Standards</div>
+    <table>
+      <thead><tr><th>Practice</th><th>Standard</th></tr></thead>
+      <tbody>
+        <tr><td>Branch naming</td><td><code>feat/socratic-engine</code>, <code>fix/three-geometry-labels</code>, <code>chore/db-schema</code></td></tr>
+        <tr><td>Commit messages</td><td>Conventional commits: <code>feat:</code>, <code>fix:</code>, <code>docs:</code>, <code>refactor:</code></td></tr>
+        <tr><td>PR requirement</td><td>At least one review before merging to main; no direct pushes to main</td></tr>
+        <tr><td>Env vars</td><td>All secrets in <code>.env.local</code>; never committed; <code>.env.example</code> in repo</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Step 6 -->
+<section class="step-section" id="step6">
+  <div class="step-header">
+    <div class="step-number">06</div>
+    <div class="step-meta">
+      <div class="step-tag tag-teal">Deploy & Operate</div>
+      <h2 class="step-title">"Works on my machine" is not acceptable</h2>
+      <p class="step-subtitle">The product must run on a real public URL with SSL, monitoring, and real users testing it before the demo.</p>
+    </div>
+  </div>
+
+  <div class="deploy-grid">
+    <div class="deploy-card">
+      <div class="deploy-icon">🚀</div>
+      <div class="deploy-title">Frontend — Vercel</div>
+      <div class="deploy-desc">Deploy Next.js to Vercel. Automatic CI/CD from main branch. Free SSL. Preview deployments for each PR. Custom domain when ready.</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-icon">⚙️</div>
+      <div class="deploy-title">Backend — Railway</div>
+      <div class="deploy-desc">FastAPI on Railway. Managed PostgreSQL with pgvector extension. Environment variables via Railway dashboard. Auto-restart on crash.</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-icon">📊</div>
+      <div class="deploy-title">Monitoring — Sentry</div>
+      <div class="deploy-desc">Sentry free tier for error tracking on both frontend and backend. Know when something breaks before users report it. Log AI API failures separately.</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-icon">📝</div>
+      <div class="deploy-title">Logging — Railway logs</div>
+      <div class="deploy-desc">Structured logging with timestamps on every API call. Log session starts, AI response times, and error types. Review weekly during sprint 4.</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-icon">🧪</div>
+      <div class="deploy-title">Pilot testing</div>
+      <div class="deploy-desc">Recruit 10–15 Grade 12 students (friends, Facebook groups, school contacts). Give them 2 weeks of free access. Collect feedback via Google Form after each session.</div>
+    </div>
+    <div class="deploy-card">
+      <div class="deploy-icon">🔁</div>
+      <div class="deploy-title">Feedback loop</div>
+      <div class="deploy-desc">Weekly sync to review pilot feedback, Sentry errors, and session analytics. Fix the top 3 issues each week. Track whether users return voluntarily — the key success signal.</div>
+    </div>
+  </div>
+
+  <div class="block" style="margin-top: 28px;">
+    <div class="block-label">Success Metrics for Pilot</div>
+    <table>
+      <thead><tr><th>Metric</th><th>Target</th><th>Why it matters</th></tr></thead>
+      <tbody>
+        <tr><td>Session completion rate</td><td>&gt; 60%</td><td>Students start and finish sessions, not just drop out</td></tr>
+        <tr><td>Return rate (week 2)</td><td>&gt; 40%</td><td>Voluntary return = the core loop has real value</td></tr>
+        <tr><td>Average session length</td><td>12–20 min</td><td>Too short = not engaging; too long = frustrating</td></tr>
+        <tr><td>Hint request rate</td><td>1–3 hints/session</td><td>Calibrates dialogue difficulty — too many hints = problems too hard</td></tr>
+        <tr><td>3D viewer engagement</td><td>&gt; 70% of geometry sessions</td><td>Validates the 3D visualizer is genuinely useful, not just decorative</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Step 7 -->
+<section class="step-section" id="step7">
+  <div class="step-header">
+    <div class="step-number">07</div>
+    <div class="step-meta">
+      <div class="step-tag tag-blue">Demo & Final Report</div>
+      <h2 class="step-title">Present live on the production URL</h2>
+      <p class="step-subtitle">No slides, no recorded video, no localhost. The product runs in front of the panel on the real URL.</p>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Demo Flow (10–12 minutes)</div>
+    <div class="demo-flow">
+      <div class="demo-step">
+        <div class="demo-step-num">1</div>
+        <div class="demo-step-label">Problem<br>Who & what pain</div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-step-num">2</div>
+        <div class="demo-step-label">Solution<br>How it solves it</div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-step-num">3</div>
+        <div class="demo-step-label">Architecture<br>Key tech decisions</div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-step-num">4</div>
+        <div class="demo-step-label">Live demo<br>Real URL, real session</div>
+      </div>
+      <div class="demo-step">
+        <div class="demo-step-num">5</div>
+        <div class="demo-step-label">Lessons<br>What you'd do differently</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Live Demo Script (what to show)</div>
+    <table>
+      <thead><tr><th>Step</th><th>What to demo</th><th>What to highlight</th></tr></thead>
+      <tbody>
+        <tr><td>1. Login</td><td>Google OAuth → student dashboard</td><td>Mastery radar chart showing progress state</td></tr>
+        <tr><td>2. Pick a problem</td><td>Select Hình học không gian → pyramid volume problem</td><td>Curriculum alignment, difficulty level</td></tr>
+        <tr><td>3. Socratic session</td><td>Deliberately give a wrong first answer. Show AI asking a guiding question, not giving the answer.</td><td>The Socratic dialogue — this is the core differentiator</td></tr>
+        <tr><td>4. 3D visualizer</td><td>Trigger the 3D pyramid viewer mid-session. Rotate it, show the cross-section tool.</td><td>Interactive 3D that no competitor has</td></tr>
+        <tr><td>5. Session summary</td><td>Complete the session, show the summary card and updated mastery score</td><td>Closes the learning loop — student sees their progress</td></tr>
+        <tr><td>6. Admin view</td><td>Switch to admin account, show session analytics and common error patterns</td><td>Two roles, data-driven improvement capability</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="block">
+    <div class="block-label">Minimum Product Checklist</div>
+    <ul class="checklist">
+      <li><div class="check-box"></div>Web app deployed at real public URL (Vercel + Railway)</li>
+      <li><div class="check-box"></div>Google OAuth login and registration working</li>
+      <li><div class="check-box"></div>Two roles: student and admin, with distinct views</li>
+      <li><div class="check-box"></div>Socratic dialogue engine working in Vietnamese with streaming</li>
+      <li><div class="check-box"></div>3D geometry viewer functional for at least 3 solid types</li>
+      <li><div class="check-box"></div>Session history persists across logins</li>
+      <li><div class="check-box"></div>Student progress / mastery map displayed on dashboard</li>
+      <li><div class="check-box"></div>Mobile responsive — usable on a phone</li>
+      <li><div class="check-box"></div>Sentry error monitoring active</li>
+      <li><div class="check-box"></div>GitHub repo: clean code, README with setup + deploy guide</li>
+      <li><div class="check-box"></div>Live demo possible without localhost or personal environment</li>
+      <li><div class="check-box"></div>At least 5 real students have used the platform before demo day</li>
+    </ul>
+  </div>
+
+  <div class="block">
+    <div class="block-label">GitHub Repository Structure</div>
+    <div class="arch-diagram" style="font-size: 12px; line-height: 1.8;">
+      <div style="color: rgba(247,245,240,0.4); margin-bottom: 8px;">/ root</div>
+      <div style="color: rgba(247,245,240,0.7);">├── <span style="color:#93b7f0;">frontend/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Next.js app</div>
+      <div style="color: rgba(247,245,240,0.7);">│&nbsp;&nbsp; ├── app/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# App Router pages</div>
+      <div style="color: rgba(247,245,240,0.7);">│&nbsp;&nbsp; ├── components/ &nbsp;&nbsp;&nbsp;# Chat, Viewer, Dashboard</div>
+      <div style="color: rgba(247,245,240,0.7);">│&nbsp;&nbsp; └── lib/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# API clients, hooks</div>
+      <div style="color: rgba(247,245,240,0.7);">├── <span style="color:#6fceba;">backend/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# FastAPI app</div>
+      <div style="color: rgba(247,245,240,0.7);">│&nbsp;&nbsp; ├── routers/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# sessions, problems, progress</div>
+      <div style="color: rgba(247,245,240,0.7);">│&nbsp;&nbsp; ├── ai/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Socratic engine, prompts</div>
+      <div style="color: rgba(247,245,240,0.7);">│&nbsp;&nbsp; └── db/ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# models, migrations</div>
+      <div style="color: rgba(247,245,240,0.7);">├── <span style="color:#EF9F27;">data/</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Problem bank JSON, curriculum tree</div>
+      <div style="color: rgba(247,245,240,0.7);">├── README.md &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# Setup, architecture, deploy guide</div>
+      <div style="color: rgba(247,245,240,0.7);">└── .env.example &nbsp;&nbsp;&nbsp;&nbsp;# All required env vars documented</div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<div class="footer">
+  <span>Toán Socratic — AI Builder Plan</span>
+  <span>7 steps · 4 sprints · 8 weeks · 1 live product</span>
+</div>
+
+</body>
+</html>
