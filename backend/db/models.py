@@ -42,6 +42,8 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     name = Column(String, nullable=False)
     avatar_url = Column(String, nullable=True)
+    auth_provider = Column(String, nullable=True)
+    auth_subject = Column(String, nullable=True, index=True)
     role = Column(SQLEnum(UserRole), default=UserRole.STUDENT, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_active = Column(DateTime, nullable=True)

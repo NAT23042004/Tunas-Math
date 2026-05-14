@@ -59,6 +59,28 @@ export interface MasteryData {
   sessions_this_week: number;
   suggested_topics: string[];
   streak_days: number;
+  weekly_activity: Array<{
+    date: string;
+    sessions: number;
+  }>;
+}
+
+export interface AdminStats {
+  total_users: number;
+  active_students: number;
+  total_sessions: number;
+  completed_sessions: number;
+  geometry_sessions: number;
+  lowest_mastery_topics: Array<{
+    topic_id: string;
+    mastery_score: number;
+  }>;
+}
+
+export interface SessionSummaryResponse {
+  summary: string;
+  mastery_delta: number;
+  next_suggested_topic: string;
 }
 
 export interface SolidSpec {

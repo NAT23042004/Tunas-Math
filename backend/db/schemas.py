@@ -73,7 +73,7 @@ class ProblemResponse(ProblemBase):
 
 # Session Schemas
 class SessionCreate(BaseModel):
-    user_id: UUID
+    user_id: Optional[UUID] = None
     topic_id: str
     problem_id: Optional[UUID] = None
     initial_message: Optional[str] = None
@@ -144,6 +144,7 @@ class MasteryMapResponse(BaseModel):
     sessions_this_week: int
     suggested_topics: List[str]
     streak_days: int
+    weekly_activity: List[Dict[str, Any]]
 
 
 # Health Schemas
