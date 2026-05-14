@@ -8,21 +8,29 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
-from ai.context_builder import SessionContextBuilder
-from ai.dialogue import DialogueState as AIState, DialogueStateMachine, HintLevel
-from ai.llm_client import llm_client
-from ai.prompts import GEOMETRY_TOOL, format_system_prompt
-from ai.turn_assessment import TurnAssessment, assess_student_turn
-from db.database import get_db
-from db.models import DialogueState, Problem, Progress, Session, SessionStatus, User, UserRole
-from db.schemas import (
+from toan_socratic.ai.context_builder import SessionContextBuilder
+from toan_socratic.ai.dialogue import DialogueState as AIState, DialogueStateMachine, HintLevel
+from toan_socratic.ai.llm_client import llm_client
+from toan_socratic.ai.prompts import GEOMETRY_TOOL, format_system_prompt
+from toan_socratic.ai.turn_assessment import TurnAssessment, assess_student_turn
+from toan_socratic.db.database import get_db
+from toan_socratic.db.models import (
+    DialogueState,
+    Problem,
+    Progress,
+    Session,
+    SessionStatus,
+    User,
+    UserRole,
+)
+from toan_socratic.db.schemas import (
     MessageCreate,
     SessionComplete,
     SessionCompleteResponse,
     SessionCreate,
     SessionResponse,
 )
-from routers.auth import get_current_user
+from toan_socratic.routers.auth import get_current_user
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 context_builder = SessionContextBuilder()

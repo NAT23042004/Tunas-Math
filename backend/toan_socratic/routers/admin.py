@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.database import get_db
-from db.models import Progress, Session, SessionStatus, User
-from routers.auth import require_admin
+from toan_socratic.db.database import get_db
+from toan_socratic.db.models import Progress, Session, SessionStatus, User
+from toan_socratic.routers.auth import require_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 

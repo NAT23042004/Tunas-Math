@@ -8,9 +8,9 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from db.database import AsyncSessionLocal, engine
-from db.models import Problem, Base, DifficultyLevel
-from data.sample_problems import SAMPLE_PROBLEMS
+from toan_socratic.data.sample_problems import SAMPLE_PROBLEMS
+from toan_socratic.db.database import AsyncSessionLocal, engine
+from toan_socratic.db.models import Base, DifficultyLevel, Problem
 
 
 async def init_database():

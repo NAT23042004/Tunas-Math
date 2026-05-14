@@ -2,6 +2,7 @@
 Test configuration and fixtures for Toán Socratic backend
 """
 
+import os
 import pytest
 import pytest_asyncio
 from typing import AsyncGenerator
@@ -11,23 +12,26 @@ from httpx import AsyncClient, ASGITransport
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
-from main import app
-from db.models import (
+from toan_socratic.db.database import get_db
+from toan_socratic.db.models import (
     Base,
-    User,
+    DialogueState,
+    DifficultyLevel,
     Problem,
     Session,
-    DifficultyLevel,
-    DialogueState,
     SessionStatus,
+    User,
     UserRole,
 )
-from db.database import get_db
-from routers.auth import create_access_token
+from toan_socratic.main import app
+from toan_socratic.routers.auth import create_access_token
 
 
 # Test database URL (use the real async backend instead of aiosqlite, which hangs here)
-TEST_DATABASE_URL = "postgresql+asyncpg://toan_user:toan_password@localhost:5433/toansc"
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL",
+    "postgresql+asyncpg://toan_user:toan_password@localhost:5433/toansc",
+)
 
 
 @pytest_asyncio.fixture(scope="function", loop_scope="function")

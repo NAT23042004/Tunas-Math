@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import settings
-from routers import admin, auth, problems, progress, sessions, users
+from toan_socratic.config import settings
+from toan_socratic.routers import admin, auth, problems, progress, sessions, users
 
 def create_app(cors_origins: list[str] | None = None) -> FastAPI:
     app = FastAPI(

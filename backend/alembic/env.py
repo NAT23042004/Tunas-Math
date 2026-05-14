@@ -5,8 +5,8 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from config import settings
-from db.models import Base
+from toan_socratic.config import settings
+from toan_socratic.db.models import Base
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

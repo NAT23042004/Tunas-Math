@@ -55,7 +55,7 @@ This script:
 
 ```bash
 cd backend
-uv run uvicorn main:app --host 127.0.0.1 --port 8000
+uv run uvicorn toan_socratic.main:app --host 127.0.0.1 --port 8000
 ```
 
 ### 4. Verify the app path
@@ -229,7 +229,7 @@ docker compose up -d
 
 ```bash
 cd backend
-uv run uvicorn main:app --host 127.0.0.1 --port 8000
+uv run uvicorn toan_socratic.main:app --host 127.0.0.1 --port 8000
 ```
 
 3. Start frontend:

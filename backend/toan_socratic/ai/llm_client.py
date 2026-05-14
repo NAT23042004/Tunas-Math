@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from typing import Any
 
-from config import settings
+from toan_socratic.config import settings
 
 
 async def acompletion(*args: Any, **kwargs: Any) -> Any:

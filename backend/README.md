@@ -78,10 +78,10 @@ This step is required before using the live API. The backend will start without 
 
 ```bash
 # Development server
-uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn toan_socratic.main:app --reload --host 0.0.0.0 --port 8000
 
 # Production server
-uv run uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+uv run uvicorn toan_socratic.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 ## API Endpoints

@@ -11,9 +11,9 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from config import settings
-from db.database import get_db
-from db.models import User, UserRole
+from toan_socratic.config import settings
+from toan_socratic.db.database import get_db
+from toan_socratic.db.models import User, UserRole
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 bearer_scheme = HTTPBearer(auto_error=False)
