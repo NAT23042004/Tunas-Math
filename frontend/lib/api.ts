@@ -5,6 +5,7 @@ import type {
   MasteryData,
   Problem,
   Session,
+  SessionListItem,
   SessionCompleteRequest,
   SessionCreateRequest,
   SessionMessageRequest,
@@ -67,7 +68,7 @@ export async function getSession(sessionId: string): Promise<Session> {
   return res.data;
 }
 
-export async function getSessions(): Promise<Session[]> {
+export async function getSessions(): Promise<SessionListItem[]> {
   const res = await api.get('/api/sessions');
   return res.data;
 }

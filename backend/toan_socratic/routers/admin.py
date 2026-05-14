@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from toan_socratic.db.database import get_db
-from toan_socratic.db.models import Progress, Session, SessionStatus, User
+from toan_socratic.db.models import Progress, Session, SessionStatus, User, UserRole
 from toan_socratic.routers.auth import require_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -24,7 +24,13 @@ async def get_admin_stats(
     ) or 0
     total_sessions = await db.scalar(select(func.count()).select_from(Session)) or 0
     active_students = await db.scalar(
-        select(func.count(func.distinct(Session.user_id))).where(Session.started_at >= one_week_ago)
+        select(func.count(func.distinct(Session.user_id)))
+        .select_from(Session)
+        .join(User, User.id == Session.user_id)
+        .where(
+            Session.started_at >= one_week_ago,
+            User.role == UserRole.STUDENT,
+        )
     ) or 0
 
     progress_rows = (

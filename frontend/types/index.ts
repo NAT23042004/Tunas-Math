@@ -26,6 +26,19 @@ export interface Session {
   ended_at?: string;
 }
 
+export interface SessionListItem {
+  id: string;
+  user_id: string;
+  problem_id?: string;
+  topic_id: string;
+  status: 'active' | 'completed' | 'abandoned';
+  dialogue_state: 'review' | 'heuristic' | 'rectify' | 'summarize';
+  summary?: string;
+  student_rating?: number;
+  started_at: string;
+  ended_at?: string;
+}
+
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;

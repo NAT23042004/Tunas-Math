@@ -28,6 +28,7 @@ from toan_socratic.db.schemas import (
     SessionComplete,
     SessionCompleteResponse,
     SessionCreate,
+    SessionListItemResponse,
     SessionResponse,
 )
 from toan_socratic.routers.auth import get_current_user
@@ -180,7 +181,7 @@ async def create_session(
     return new_session
 
 
-@router.get("", response_model=list[SessionResponse])
+@router.get("", response_model=list[SessionListItemResponse])
 async def list_sessions(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -190,7 +191,8 @@ async def list_sessions(
         .where(Session.user_id == current_user.id)
         .order_by(Session.started_at.desc())
     )
-    return result.scalars().all()
+    sessions = result.scalars().all()
+    return [SessionListItemResponse.model_validate(session) for session in sessions]
 
 
 @router.get("/{session_id}", response_model=SessionResponse)
