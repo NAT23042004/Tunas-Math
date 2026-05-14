@@ -2,7 +2,6 @@ import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
 const nextAuthDebug = process.env.NEXTAUTH_DEBUG === 'true';
-const authBridgeSecret = process.env.AUTH_BRIDGE_SECRET ?? process.env.NEXTAUTH_SECRET;
 
 const handler = NextAuth({
   debug: nextAuthDebug,
@@ -27,48 +26,33 @@ const handler = NextAuth({
     },
   },
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       try {
-        if (!authBridgeSecret) {
-          console.error('[nextauth][error]', 'Missing auth bridge secret');
+        const googleIdToken = account?.id_token;
+        if (!googleIdToken) {
+          console.error('[nextauth][error]', 'Missing Google ID token');
           return false;
         }
 
-        // Create or get user from backend
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: user.email,
-            name: user.name,
-            avatar_url: user.image,
-          }),
+          body: JSON.stringify({ id_token: googleIdToken }),
         });
 
-        if (response.ok) {
-          const userData = await response.json();
-          const tokenRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/token`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Auth-Bridge-Secret': authBridgeSecret,
-            },
-            body: JSON.stringify({ user_id: userData.id }),
-          });
-
-          if (!tokenRes.ok) {
-            return false;
-          }
-
-          const tokenData = await tokenRes.json();
-
-          // Store backend auth data for the JWT callback.
-          (user as unknown as Record<string, unknown>).userId = userData.id;
-          (user as unknown as Record<string, unknown>).accessToken = tokenData.access_token;
-          return true;
+        if (!response.ok) {
+          console.error('[nextauth][error]', 'Backend Google auth exchange failed', response.status);
+          return false;
         }
-        return false;
-      } catch {
+
+        const authData = await response.json();
+        (user as unknown as Record<string, unknown>).userId = authData.user.id;
+        (user as unknown as Record<string, unknown>).accessToken = authData.access_token;
+        (user as unknown as Record<string, unknown>).role = authData.user.role;
+        (user as unknown as Record<string, unknown>).image = authData.user.avatar_url ?? user.image;
+        return true;
+      } catch (error) {
+        console.error('[nextauth][error]', 'Backend Google auth exchange threw', error);
         return false;
       }
     },
@@ -76,6 +60,7 @@ const handler = NextAuth({
       if (user) {
         token.userId = (user as unknown as Record<string, unknown>).userId as string;
         token.accessToken = (user as unknown as Record<string, unknown>).accessToken as string;
+        token.role = (user as unknown as Record<string, unknown>).role as 'student' | 'admin';
       }
       return token;
     },
@@ -83,6 +68,7 @@ const handler = NextAuth({
       if (session.user) {
         (session.user as unknown as Record<string, unknown>).userId = token.userId as string;
         (session.user as unknown as Record<string, unknown>).accessToken = token.accessToken as string;
+        (session.user as unknown as Record<string, unknown>).role = token.role as string;
       }
       return session;
     },

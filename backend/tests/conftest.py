@@ -12,8 +12,18 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 from main import app
-from db.models import Base, User, Problem, Session, DifficultyLevel, DialogueState, SessionStatus
+from db.models import (
+    Base,
+    User,
+    Problem,
+    Session,
+    DifficultyLevel,
+    DialogueState,
+    SessionStatus,
+    UserRole,
+)
 from db.database import get_db
+from routers.auth import create_access_token
 
 
 # Test database URL (use the real async backend instead of aiosqlite, which hangs here)
@@ -188,6 +198,78 @@ async def sample_user(
         await session.commit()
         await session.refresh(user)
     return user
+
+
+@pytest_asyncio.fixture(loop_scope="function")
+async def admin_user(
+    prepared_db: None,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> User:
+    """Create an admin user in database"""
+    async with session_factory() as session:
+        user = User(
+            email="admin@example.com",
+            name="Admin User",
+            role=UserRole.ADMIN,
+        )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+    return user
+
+
+@pytest_asyncio.fixture(loop_scope="function")
+async def other_user(
+    prepared_db: None,
+    session_factory: async_sessionmaker[AsyncSession],
+) -> User:
+    """Create a second student user in database"""
+    async with session_factory() as session:
+        user = User(
+            email="other@example.com",
+            name="Other User",
+            role=UserRole.STUDENT,
+        )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def auth_headers(sample_user: User) -> dict[str, str]:
+    token = create_access_token(
+        {
+            "sub": str(sample_user.id),
+            "email": sample_user.email,
+            "role": sample_user.role.value,
+        }
+    )
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_auth_headers(admin_user: User) -> dict[str, str]:
+    token = create_access_token(
+        {
+            "sub": str(admin_user.id),
+            "email": admin_user.email,
+            "role": admin_user.role.value,
+        }
+    )
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def other_auth_headers(other_user: User) -> dict[str, str]:
+    token = create_access_token(
+        {
+            "sub": str(other_user.id),
+            "email": other_user.email,
+            "role": other_user.role.value,
+        }
+    )
+    return {"Authorization": f"Bearer {token}"}
 
 
 @pytest_asyncio.fixture(loop_scope="function")

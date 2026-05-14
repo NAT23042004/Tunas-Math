@@ -1,6 +1,15 @@
 // frontend/lib/api.ts
 import axios from 'axios';
-import type { SessionCreateRequest, SessionMessageRequest, SessionCompleteRequest, Problem, MasteryData, Session } from '@/types';
+import type {
+  AdminStats,
+  MasteryData,
+  Problem,
+  Session,
+  SessionCompleteRequest,
+  SessionCreateRequest,
+  SessionMessageRequest,
+  SessionSummaryResponse,
+} from '@/types';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
@@ -18,19 +27,7 @@ api.interceptors.request.use((config) => {
 });
 
 export async function createSession(data: SessionCreateRequest): Promise<Session> {
-  let userId: string | null = null;
-  if (typeof window !== 'undefined') {
-    userId = localStorage.getItem('userId');
-  }
-
-  if (!userId) {
-    throw new Error('User not authenticated');
-  }
-
-  const res = await api.post('/api/sessions', {
-    ...data,
-    user_id: userId,
-  });
+  const res = await api.post('/api/sessions', data);
   return res.data;
 }
 
@@ -46,7 +43,7 @@ export async function sendMessage(sessionId: string, data: SessionMessageRequest
   return res.body;
 }
 
-export async function completeSession(sessionId: string, data: SessionCompleteRequest): Promise<{ summary: string; mastery_delta: number; next_suggested_topic: string }> {
+export async function completeSession(sessionId: string, data: SessionCompleteRequest): Promise<SessionSummaryResponse> {
   const res = await api.put(`/api/sessions/${sessionId}/complete`, data);
   return res.data;
 }
@@ -61,18 +58,22 @@ export async function getProblems(topicId?: string, difficulty?: string, isGeome
 }
 
 export async function getMyProgress(): Promise<MasteryData> {
-  let userId: string | null = null;
-  if (typeof window !== 'undefined') {
-    userId = localStorage.getItem('userId');
-  }
-  const res = await api.get('/api/progress/mastery', {
-    params: { user_id: userId }
-  });
+  const res = await api.get('/api/progress/me');
   return res.data;
 }
 
-export async function getSessionHistory(sessionId: string): Promise<Session> {
+export async function getSession(sessionId: string): Promise<Session> {
   const res = await api.get(`/api/sessions/${sessionId}`);
+  return res.data;
+}
+
+export async function getSessions(): Promise<Session[]> {
+  const res = await api.get('/api/sessions');
+  return res.data;
+}
+
+export async function getAdminStats(): Promise<AdminStats> {
+  const res = await api.get('/api/admin/stats');
   return res.data;
 }
 

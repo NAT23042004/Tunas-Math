@@ -10,14 +10,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
-    else if (session && (session.user as Record<string, unknown>).role !== 'admin') router.push('/dashboard');
+    else if (session && session.user.role !== 'admin') router.push('/dashboard');
   }, [session, status, router]);
 
   if (status === 'loading') return <div className="p-8 text-center">Đang tải...</div>;
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 border-r p-4">
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <aside className="border-b p-4 md:w-64 md:border-b-0 md:border-r">
         <h2 className="text-lg font-semibold">Admin Panel</h2>
         <nav className="mt-6 space-y-2">
           <a href="/admin/dashboard" className="block rounded px-3 py-2 hover:bg-gray-100">Dashboard</a>

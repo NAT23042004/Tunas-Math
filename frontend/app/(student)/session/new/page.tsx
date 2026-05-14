@@ -22,7 +22,7 @@ export default function NewSessionPage() {
   useEffect(() => {
     // Store user_id in localStorage when session is available
     if (session?.user) {
-      const userId = (session.user as unknown as Record<string, unknown>).userId as string;
+      const userId = session.user.userId;
       if (userId) {
         localStorage.setItem('userId', userId);
       }

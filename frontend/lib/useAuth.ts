@@ -15,15 +15,14 @@ export function useAuth() {
   // Sync auth state with localStorage when session changes
   useEffect(() => {
     if (isAuthenticated && session?.user) {
-      const user = session.user as Record<string, unknown>;
-      const accessToken = user.accessToken as string | undefined;
-      const userId = user.userId as string | undefined;
+      const accessToken = session.user.accessToken;
+      const userId = session.user.userId;
       if (accessToken && userId) {
         const authUser: User = {
           id: userId,
-          email: user.email as string,
-          name: user.name as string,
-          role: 'student',
+          email: session.user.email as string,
+          name: session.user.name as string,
+          role: session.user.role ?? 'student',
           userId,
         };
         setAuth(authUser, accessToken);
