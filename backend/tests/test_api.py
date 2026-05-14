@@ -393,6 +393,49 @@ class TestSessionsEndpoints:
 
     @pytest.mark.api
     @pytest.mark.asyncio
+    async def test_send_message_stream_error_persists_student_turn(
+        self,
+        test_client: AsyncClient,
+        sample_session: Session,
+        mock_llm_client,
+        auth_headers: dict[str, str],
+    ):
+        from unittest.mock import patch
+
+        async def failing_stream_response(messages, system_prompt, tools=None, max_tokens=1024):
+            if False:
+                yield ""
+            raise RuntimeError("llm down")
+
+        mock_llm_client.stream_response = failing_stream_response
+
+        with patch("routers.sessions.llm_client", mock_llm_client):
+            response = await test_client.post(
+                f"/api/sessions/{sample_session.id}/message?stream=true",
+                json={"content": "Em thu giai bai nay", "hint_requested": False},
+                headers=auth_headers,
+            )
+
+        assert response.status_code == 200
+        events = [
+            json.loads(line.removeprefix("data: "))
+            for line in response.text.splitlines()
+            if line.startswith("data: ")
+        ]
+        assert events[-1]["error"] == "llm down"
+
+        session_response = await test_client.get(
+            f"/api/sessions/{sample_session.id}",
+            headers=auth_headers,
+        )
+        assert session_response.status_code == 200
+        data = session_response.json()
+        assert data["messages"][-1]["role"] == "user"
+        assert data["messages"][-1]["content"] == "Em thu giai bai nay"
+        assert data["dialogue_state"] == "heuristic"
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
     async def test_send_message_hint_request_transitions_to_rectify(
         self,
         test_client: AsyncClient,
@@ -838,6 +881,37 @@ class TestAuthEndpoints:
             json={"id_token": "bad-token"},
         )
         assert response.status_code == 401
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_exchange_google_token_does_not_auto_link_admin_by_email(
+        self,
+        test_client: AsyncClient,
+        admin_user: User,
+        monkeypatch: pytest.MonkeyPatch,
+        session_factory: async_sessionmaker[AsyncSession],
+    ):
+        monkeypatch.setattr(settings, "google_client_id", "google-client-id")
+
+        async def fake_verify(_: str) -> dict[str, str]:
+            return {
+                "sub": "attacker-google-sub",
+                "email": admin_user.email,
+                "name": "Admin User",
+                "picture": "",
+            }
+
+        monkeypatch.setattr("routers.auth.verify_google_identity_token", fake_verify)
+        response = await test_client.post(
+            "/api/auth/google",
+            json={"id_token": "signed-google-token"},
+        )
+        assert response.status_code == 409
+
+        async with session_factory() as db:
+            user = await db.get(User, admin_user.id)
+            assert user.auth_provider is None
+            assert user.auth_subject is None
 
 
 class TestProgressAndAdminEndpoints:

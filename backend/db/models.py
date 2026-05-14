@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Integer, Float, DateTime, ForeignKey, Enum as SQLEnum, Text
+from sqlalchemy import Column, String, Boolean, Integer, Float, DateTime, ForeignKey, Enum as SQLEnum, Text, UniqueConstraint
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 import uuid
@@ -37,6 +37,9 @@ class DifficultyLevel(str, enum.Enum):
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        UniqueConstraint("auth_provider", "auth_subject", name="uq_users_auth_provider_subject"),
+    )
 
     id = Column(UUID, primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, nullable=False, index=True)

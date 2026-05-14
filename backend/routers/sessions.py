@@ -225,6 +225,8 @@ async def send_message(
 
     try:
         if stream:
+            await db.commit()
+            await db.refresh(session)
             return await stream_response(
                 llm_messages=llm_messages,
                 system_prompt=system_prompt,

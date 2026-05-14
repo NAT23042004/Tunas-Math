@@ -64,6 +64,14 @@ def _serialize_user(user: User) -> AuthUserResponse:
     )
 
 
+def _can_link_existing_email_account(user: User) -> bool:
+    return (
+        user.role == UserRole.STUDENT
+        and user.auth_provider is None
+        and user.auth_subject is None
+    )
+
+
 async def verify_google_identity_token(id_token: str) -> dict[str, str]:
     """Validate a Google ID token via Google's tokeninfo endpoint."""
     if not settings.google_client_id:
@@ -142,7 +150,15 @@ async def get_current_user(
             detail="Invalid access token payload",
         )
 
-    result = await db.execute(select(User).where(User.id == UUID(subject)))
+    try:
+        user_id = UUID(subject)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid access token subject",
+        ) from exc
+
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalars().first()
     if not user:
         raise HTTPException(
@@ -209,6 +225,11 @@ async def exchange_google_token(
     if not user:
         result = await db.execute(select(User).where(User.email == identity["email"]))
         user = result.scalars().first()
+        if user and not _can_link_existing_email_account(user):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Existing account cannot be linked automatically",
+            )
 
     if user is None:
         user = User(
