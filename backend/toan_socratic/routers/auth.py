@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
 from jose import jwt
 
-from config import settings
-from db.database import get_db
-from db.models import User
+from toan_socratic.config import settings
+from toan_socratic.db.database import get_db
+from toan_socratic.db.models import User
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 

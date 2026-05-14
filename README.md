@@ -46,7 +46,7 @@ docker compose up -d postgres
 cd backend
 uv sync
 uv run python init_db.py
-uv run uvicorn main:app --reload
+uv run uvicorn toan_socratic.main:app --reload
 
 # Frontend
 cd frontend

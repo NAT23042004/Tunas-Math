@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from db.models import (
+from toan_socratic.db.models import (
     User, Problem, Session, Progress,
     UserRole, SessionStatus, DialogueState, DifficultyLevel
 )

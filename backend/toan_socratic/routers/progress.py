@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 from datetime import datetime, timedelta
-from db.database import get_db
-from db.models import Progress, Session, SessionStatus, DialogueState
+from toan_socratic.db.database import get_db
+from toan_socratic.db.models import DialogueState, Progress, Session, SessionStatus
 from uuid import UUID
 
 router = APIRouter(prefix="/api/progress", tags=["progress"])

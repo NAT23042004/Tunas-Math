@@ -4,9 +4,9 @@ from sqlalchemy import select
 from typing import Optional, List
 from uuid import UUID
 
-from db.database import get_db
-from db.models import Problem, DifficultyLevel
-from db.schemas import ProblemCreate, ProblemResponse
+from toan_socratic.db.database import get_db
+from toan_socratic.db.models import DifficultyLevel, Problem
+from toan_socratic.db.schemas import ProblemCreate, ProblemResponse
 
 
 router = APIRouter(prefix="/api/problems", tags=["problems"])

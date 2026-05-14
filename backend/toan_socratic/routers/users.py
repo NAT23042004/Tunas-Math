@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from uuid import uuid4, UUID
-from db.database import get_db
-from db.models import User, UserRole
+from toan_socratic.db.database import get_db
+from toan_socratic.db.models import User, UserRole
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/users", tags=["users"])

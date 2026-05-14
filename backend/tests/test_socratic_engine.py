@@ -6,10 +6,10 @@ Tests the core functionality without requiring full API setup
 import asyncio
 from datetime import datetime, timezone
 
-from ai.dialogue import DialogueStateMachine, DialogueState, HintLevel
-from ai.context_builder import SessionContextBuilder
-from ai.prompts import format_system_prompt, GEOMETRY_TOOL
-from data.sample_problems import SAMPLE_PROBLEMS
+from toan_socratic.ai.context_builder import SessionContextBuilder
+from toan_socratic.ai.dialogue import DialogueState, DialogueStateMachine, HintLevel
+from toan_socratic.ai.prompts import GEOMETRY_TOOL, format_system_prompt
+from toan_socratic.data.sample_problems import SAMPLE_PROBLEMS
 
 
 class MockClaudeClient:

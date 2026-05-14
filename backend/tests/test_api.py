@@ -10,10 +10,10 @@ from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from uuid import uuid4
 
-from config import settings
-from db.database import get_db
-from db.models import User, Session, Problem, DialogueState
-from main import app, create_app
+from toan_socratic.config import settings
+from toan_socratic.db.database import get_db
+from toan_socratic.db.models import DialogueState, Problem, Session, User
+from toan_socratic.main import app, create_app
 
 
 class TestHealthEndpoints:
@@ -137,7 +137,7 @@ class TestSessionsEndpoints:
 
         # Mock the LLM client using patch
         from unittest.mock import patch
-        with patch('routers.sessions.llm_client', mock_llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", mock_llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json=message_data
@@ -170,7 +170,7 @@ class TestSessionsEndpoints:
         )
         llm_client = self._build_prompt_asserting_llm("rectify")
 
-        with patch("routers.sessions.llm_client", llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "V = 50 cm3", "hint_requested": False},
@@ -198,7 +198,7 @@ class TestSessionsEndpoints:
         )
         llm_client = self._build_prompt_asserting_llm("summarize")
 
-        with patch("routers.sessions.llm_client", llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "V = 48 cm3", "hint_requested": False},
@@ -226,7 +226,7 @@ class TestSessionsEndpoints:
         )
         llm_client = self._build_prompt_asserting_llm("heuristic")
 
-        with patch("routers.sessions.llm_client", llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "Em biết diện tích đáy là 36 cm2", "hint_requested": False},
@@ -249,7 +249,7 @@ class TestSessionsEndpoints:
         mock_llm_client.stream_response = mock_stream_response
 
         from unittest.mock import patch
-        with patch('routers.sessions.llm_client', mock_llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", mock_llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message?stream=true",
                 json={"content": "Bat dau", "hint_requested": False},
@@ -285,7 +285,7 @@ class TestSessionsEndpoints:
         )
         llm_client = self._build_prompt_asserting_llm("summarize")
 
-        with patch("routers.sessions.llm_client", llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message?stream=true",
                 json={"content": "V = 48 cm3", "hint_requested": False},
@@ -324,7 +324,7 @@ class TestSessionsEndpoints:
             dialogue_state=DialogueState.HEURISTIC,
         )
 
-        with patch('routers.sessions.llm_client', mock_llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", mock_llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "Em cần gợi ý", "hint_requested": True},
@@ -353,7 +353,7 @@ class TestSessionsEndpoints:
             dialogue_state=DialogueState.REVIEW,
         )
 
-        with patch('routers.sessions.llm_client', mock_llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", mock_llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "", "hint_requested": True},
@@ -384,7 +384,7 @@ class TestSessionsEndpoints:
             fail_count=1,
         )
 
-        with patch('routers.sessions.llm_client', mock_llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", mock_llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "Em thử lại", "hint_requested": False},
@@ -414,7 +414,7 @@ class TestSessionsEndpoints:
             dialogue_state=DialogueState.HEURISTIC,
         )
 
-        with patch('routers.sessions.llm_client', mock_llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", mock_llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "V = 50 cm3", "hint_requested": False},
@@ -443,7 +443,7 @@ class TestSessionsEndpoints:
             dialogue_state=DialogueState.HEURISTIC,
         )
 
-        with patch('routers.sessions.llm_client', mock_llm_client):
+        with patch("toan_socratic.routers.sessions.llm_client", mock_llm_client):
             response = await test_client.post(
                 f"/api/sessions/{sample_session.id}/message",
                 json={"content": "V = 48 cm3", "hint_requested": False},

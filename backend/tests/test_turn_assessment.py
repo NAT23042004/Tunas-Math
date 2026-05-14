@@ -1,6 +1,6 @@
 import pytest
 
-from ai.turn_assessment import TurnAssessment, assess_student_turn
+from toan_socratic.ai.turn_assessment import TurnAssessment, assess_student_turn
 
 
 class TestTurnAssessment:

@@ -4,7 +4,7 @@ LLM client tests for Toán Socratic backend
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from ai.llm_client import LLMClient
+from toan_socratic.ai.llm_client import LLMClient
 
 
 class TestLLMClient:
@@ -95,7 +95,7 @@ class TestLLMClientResponses:
         system_prompt = "You are a helpful assistant."
 
         # Mock the litellm completion
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
             mock_response.choices[0].message.content = "Test AI response"
@@ -117,7 +117,7 @@ class TestLLMClientResponses:
         tools = [{"name": "test_tool", "description": "Test tool"}]
 
         # Mock the litellm completion
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
             mock_response.choices[0].message.content = "Test response"
@@ -147,7 +147,7 @@ class TestLLMClientResponses:
         system_prompt = "You are a helpful assistant."
 
         # Mock the streaming completion
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             # Create mock chunks
             chunk1 = MagicMock()
             chunk1.choices = [MagicMock()]
@@ -181,7 +181,7 @@ class TestLLMClientResponses:
         system_prompt = "You are a helpful assistant."
 
         # Mock an error
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_completion.side_effect = Exception("API Error")
 
             with pytest.raises(Exception) as exc_info:
@@ -199,7 +199,7 @@ class TestLLMClientResponses:
         system_prompt = "You are a helpful assistant."
 
         # Mock response without choices
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_response = MagicMock()
             mock_response.choices = []
             mock_completion.return_value = mock_response
@@ -226,7 +226,7 @@ class TestLLMClientIntegration:
         ]
         system_prompt = "You are a math tutor."
 
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
             mock_response.choices[0].message.content = "3+3=6"
@@ -262,7 +262,7 @@ class TestLLMClientIntegration:
             }
         }]
 
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
             mock_response.choices[0].message.content = "I'll draw a pyramid for you."
@@ -294,7 +294,7 @@ class TestLLMClientProviders:
         client = LLMClient()
         client.set_provider("anthropic", "claude-sonnet-4-6")
 
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
             mock_response.choices[0].message.content = "Anthropic response"
@@ -313,7 +313,7 @@ class TestLLMClientProviders:
         client = LLMClient()
         client.set_provider("openai", "gpt-4")
 
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
             mock_response.choices[0].message.content = "OpenAI response"
@@ -332,7 +332,7 @@ class TestLLMClientProviders:
         client = LLMClient()
         client.set_provider("qwen", "qwen-turbo")
 
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
             mock_response.choices[0].message.content = "Qwen response"
@@ -351,7 +351,7 @@ class TestLLMClientProviders:
         client = LLMClient()
         client.set_provider("gemini", "gemini-pro")
 
-        with patch('ai.llm_client.acompletion') as mock_completion:
+        with patch("toan_socratic.ai.llm_client.acompletion") as mock_completion:
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
             mock_response.choices[0].message.content = "Gemini response"

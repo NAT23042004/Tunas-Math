@@ -4,7 +4,7 @@ from datetime import datetime
 import uuid
 import enum
 
-from db.compatibility import UUID, JSONB
+from toan_socratic.db.compatibility import JSONB, UUID
 from sqlalchemy import Text as Vector  # Placeholder for Vector type
 
 

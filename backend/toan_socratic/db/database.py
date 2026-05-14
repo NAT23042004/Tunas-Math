@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from config import settings
+from toan_socratic.config import settings
 
 # Create async engine
 engine = create_async_engine(
@@ -30,6 +30,6 @@ async def get_db() -> AsyncSession:
 
 async def init_db():
     """Initialize database tables"""
-    from db.models import Base
+    from toan_socratic.db.models import Base
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
