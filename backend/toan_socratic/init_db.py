@@ -1,23 +1,14 @@
 """
-Database initialization script
-Loads sample problems into the database
+Database seed script
+Loads sample problems into an existing schema
 """
 
 import asyncio
-from datetime import datetime, timezone
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from toan_socratic.data.sample_problems import SAMPLE_PROBLEMS
-from toan_socratic.db.database import AsyncSessionLocal, engine
-from toan_socratic.db.models import Base, DifficultyLevel, Problem
-
-
-async def init_database():
-    """Initialize database tables"""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    print("✓ Database tables created")
+from toan_socratic.db.database import AsyncSessionLocal
+from toan_socratic.db.models import DifficultyLevel, Problem
 
 
 async def load_sample_problems():
@@ -50,15 +41,14 @@ async def load_sample_problems():
 
 
 async def main():
-    """Main initialization function"""
-    print("Initializing Toán Socratic database...")
+    """Seed sample data after schema migrations have been applied."""
+    print("Seeding Toán Socratic database...")
 
     try:
-        await init_database()
         await load_sample_problems()
-        print("\n✓ Database initialization complete!")
+        print("\n✓ Database seed complete!")
     except Exception as e:
-        print(f"\n✗ Error during initialization: {str(e)}")
+        print(f"\n✗ Error during database seed: {str(e)}")
         raise
 
 

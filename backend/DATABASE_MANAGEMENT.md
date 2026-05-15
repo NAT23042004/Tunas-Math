@@ -73,10 +73,9 @@ You usually **do not** need to run it on every restart.
 
 Run it when:
 
-- you created a new Postgres container/volume
-- you deleted the DB volume
-- the DB is empty
-- the backend returns missing-table errors
+- you already ran migrations and want to load sample problems
+- you created a new Postgres container/volume and have an empty `problems` table
+- you deleted the DB volume and recreated the schema
 
 Typical failure symptom:
 
@@ -96,11 +95,18 @@ Check whether the initialized problems data is available:
 curl http://127.0.0.1:8000/api/problems
 ```
 
-If `/health` works but `/api/problems` fails due to schema errors, initialize the DB:
+If `/health` works but `/api/problems` fails due to schema errors, run migrations first:
 
 ```bash
 cd backend
-uv run python init_db.py
+uv run alembic upgrade head
+```
+
+If the schema exists but sample problems are missing, seed them:
+
+```bash
+cd backend
+uv run python -m toan_socratic.init_db
 ```
 
 ## pgAdmin

@@ -45,7 +45,8 @@ docker compose up -d postgres
 # Backend
 cd backend
 uv sync
-uv run python init_db.py
+uv run alembic upgrade head
+uv run python -m toan_socratic.init_db
 uv run uvicorn toan_socratic.main:app --reload
 
 # Frontend
@@ -54,7 +55,7 @@ npm install
 npm run dev
 ```
 
-The backend depends on PostgreSQL schema and seed data created by `uv run python init_db.py`. If you skip that step, live API requests will fail with missing-table errors.
+The backend depends on PostgreSQL schema from `uv run alembic upgrade head` and sample seed data from `uv run python -m toan_socratic.init_db`. If you skip the migration step, live API requests will fail with missing-table errors.
 
 Local auth bridge baseline for Sprint 2:
 

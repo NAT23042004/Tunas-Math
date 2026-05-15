@@ -40,7 +40,7 @@ backend/
 ├── tests/                 # Test suite
 │   └── test_socratic_engine.py
 ├── config.py              # Configuration management
-├── init_db.py             # Database initialization script
+├── init_db.py             # Database seed script
 ├── main.py                # FastAPI application entry point
 ├── requirements.txt       # Python dependencies
 └── .env.example           # Environment variables template
@@ -67,12 +67,13 @@ cp .env.example .env
 # Edit .env with your actual values
 ```
 
-3. Initialize database:
+3. Apply schema migrations and seed sample data:
 ```bash
-uv run python init_db.py
+uv run alembic upgrade head
+uv run python -m toan_socratic.init_db
 ```
 
-This step is required before using the live API. The backend will start without it, but requests that hit the database will fail because the tables and sample data do not exist yet.
+This step is required before using the live API. Migrations create the schema; the seed step loads sample problems if they are missing.
 
 ### Running the Server
 

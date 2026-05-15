@@ -1,6 +1,6 @@
 """add google auth columns
 
-Revision ID: 20260514_0001
+Revision ID: add_google_auth_columns
 Revises:
 Create Date: 2026-05-14
 """
@@ -9,8 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "20260514_0001"
-down_revision = None
+revision = "add_google_auth_columns"
+down_revision = "initial_schema"
 branch_labels = None
 depends_on = None
 
