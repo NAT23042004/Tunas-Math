@@ -21,14 +21,12 @@ COPY pyproject.toml uv.lock ./
 
 FROM base AS development
 
-RUN --mount=type=cache,id=uv-dev-deps,target=/root/.cache/uv \
-    uv sync --locked --no-install-project
+RUN uv sync --locked --no-install-project
 
 # Copy application code after dependency installation
 COPY . .
 
-RUN --mount=type=cache,id=uv-dev-project,target=/root/.cache/uv \
-    uv sync --locked
+RUN uv sync --locked
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
@@ -43,15 +41,13 @@ CMD ["uv", "run", "uvicorn", "toan_socratic.main:app", "--host", "0.0.0.0", "--p
 
 FROM base AS production
 
-RUN --mount=type=cache,id=uv-prod-deps,target=/root/.cache/uv \
-    uv sync --locked --no-dev --no-install-project
+RUN uv sync --locked --no-dev --no-install-project
 
 COPY . .
 
 RUN chmod +x /app/scripts/start.sh
 
-RUN --mount=type=cache,id=uv-prod-project,target=/root/.cache/uv \
-    uv sync --locked --no-dev
+RUN uv sync --locked --no-dev
 
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
