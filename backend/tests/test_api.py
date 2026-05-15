@@ -4,12 +4,13 @@ API endpoint tests for Toán Socratic backend
 
 import json
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from datetime import datetime, timedelta
 from datetime import time as dtime
 import pytest
 from fastapi import HTTPException
 from httpx import AsyncClient, ASGITransport
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from uuid import uuid4
 
@@ -51,6 +52,62 @@ class TestHealthEndpoints:
 
         data = response.json()
         assert data["status"] == "ok"
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_health_endpoint_does_not_require_database(self):
+        """Test health endpoint remains independent from database reachability."""
+        isolated_app = create_app(cors_origins=["http://test"])
+        transport = ASGITransport(app=isolated_app)
+
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/health")
+
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}
+
+    @pytest.mark.api
+    @pytest.mark.asyncio
+    async def test_ready_endpoint(self):
+        """Test readiness endpoint validates database connectivity."""
+        isolated_app = create_app(cors_origins=["http://test"])
+        ready_probe = AsyncMock()
+        ready_probe.execute = AsyncMock(return_value=text("SELECT 1"))
+
+        async def override_get_db():
+            yield ready_probe
+
+        isolated_app.dependency_overrides[get_db] = override_get_db
+        transport = ASGITransport(app=isolated_app)
+
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/ready")
+
+        assert response.status_code == 200
+        assert response.json() == {"status": "ready"}
+        ready_probe.execute.assert_awaited_once()
+
+    def test_create_app_skips_sentry_when_dsn_is_unset(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr("toan_socratic.main._SENTRY_INITIALIZED", False)
+        monkeypatch.setattr("toan_socratic.main.settings.sentry_dsn", None)
+        sentry_init = Mock()
+        monkeypatch.setattr("toan_socratic.main.sentry_sdk.init", sentry_init)
+
+        create_app(cors_origins=["http://test"])
+
+        sentry_init.assert_not_called()
+
+    def test_create_app_initializes_sentry_when_dsn_is_set(self, monkeypatch: pytest.MonkeyPatch):
+        monkeypatch.setattr("toan_socratic.main._SENTRY_INITIALIZED", False)
+        monkeypatch.setattr("toan_socratic.main.settings.sentry_dsn", "https://example@sentry.io/123")
+        monkeypatch.setattr("toan_socratic.main.settings.sentry_environment", "production")
+        monkeypatch.setattr("toan_socratic.main.settings.sentry_traces_sample_rate", 0.25)
+        sentry_init = Mock()
+        monkeypatch.setattr("toan_socratic.main.sentry_sdk.init", sentry_init)
+
+        create_app(cors_origins=["http://test"])
+
+        sentry_init.assert_called_once()
 
 
 class TestSessionsEndpoints:

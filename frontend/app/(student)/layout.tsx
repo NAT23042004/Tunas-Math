@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import LoadingState from '@/components/LoadingState';
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
@@ -13,7 +14,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     if (status === 'unauthenticated') router.push('/login');
   }, [status, router]);
 
-  if (status === 'loading') return <div className="p-8 text-center">Đang tải...</div>;
+  if (status === 'loading') {
+    return (
+      <LoadingState
+        title="Dang xac thuc"
+        message="Phien dang nhap dang duoc kiem tra truoc khi vao khu hoc sinh."
+        fullHeight
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">

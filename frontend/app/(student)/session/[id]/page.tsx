@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import ChatPanel from '@/components/ChatPanel';
 import ContextPanel from '@/components/ContextPanel';
+import ErrorState from '@/components/ErrorState';
+import LoadingState from '@/components/LoadingState';
 import SessionSummary from '@/components/SessionSummary';
 import { completeSession, getSession, sendMessage } from '@/lib/api';
 import { useSessionStore } from '@/lib/sessionStore';
@@ -20,21 +22,53 @@ export default function SessionPage() {
   const [summaryData, setSummaryData] = useState<SessionSummaryResponse | null>(null);
   const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isLoadingSession, setIsLoadingSession] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
-    setSession(sessionId);
-    getSession(sessionId).then((data) => {
-      if (data.messages && Array.isArray(data.messages)) {
-        (data.messages as Message[]).forEach((msg) => addMessage(msg));
+    let isActive = true;
+
+    const loadSession = async () => {
+      setIsLoadingSession(true);
+      setPageError(null);
+      setActionError(null);
+      setSession(sessionId);
+
+      try {
+        const data = await getSession(sessionId);
+        if (!isActive) {
+          return;
+        }
+
+        if (data.messages && Array.isArray(data.messages)) {
+          (data.messages as Message[]).forEach((msg) => addMessage(msg));
+        }
+        setDialogueState(data.dialogue_state || 'review');
+        setHintLevel(data.hint_level ?? 0);
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+        setPageError(error instanceof Error ? error.message : 'Khong the tai phien hoc nay.');
+      } finally {
+        if (isActive) {
+          setIsLoadingSession(false);
+        }
       }
-      setDialogueState(data.dialogue_state || 'review');
-      setHintLevel(data.hint_level ?? 0);
-    });
+    };
+
+    void loadSession();
+
+    return () => {
+      isActive = false;
+    };
   }, [sessionId, setSession, addMessage]);
 
   const handleSend = async (content: string, hintRequested?: boolean) => {
     setStreaming(true);
     setStreamingText('');
+    setActionError(null);
 
     const userMsg: Message = { role: 'user', content, timestamp: new Date().toISOString() };
     addMessage(userMsg);
@@ -116,6 +150,8 @@ export default function SessionPage() {
         };
       }
       addMessage(assistantMsg);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Khong the gui tin nhan luc nay.');
     } finally {
       setStreamingText('');
       setStreaming(false);
@@ -128,14 +164,39 @@ export default function SessionPage() {
 
   const handleSubmitCompletion = async (rating: number) => {
     setIsCompleting(true);
+    setActionError(null);
     try {
       const result = await completeSession(sessionId, { student_rating: rating });
       setIsRatingDialogOpen(false);
       setSummaryData(result);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Khong the ket thuc phien hoc luc nay.');
     } finally {
       setIsCompleting(false);
     }
   };
+
+  if (isLoadingSession) {
+    return (
+      <LoadingState
+        title="Dang tai phien hoc"
+        message="Hoi thoai va ngu canh bai toan dang duoc khoi phuc."
+        fullHeight
+      />
+    );
+  }
+
+  if (pageError) {
+    return (
+      <ErrorState
+        title="Khong mo duoc phien hoc"
+        message={pageError}
+        actionLabel="Quay lai lich su"
+        onAction={() => router.push('/history')}
+        fullHeight
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col xl:flex-row">
@@ -154,6 +215,11 @@ export default function SessionPage() {
             {isCompleting ? 'Dang ket thuc...' : 'Ket thuc phien'}
           </button>
         </div>
+        {actionError ? (
+          <div className="border-b border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {actionError}
+          </div>
+        ) : null}
         <div className="flex-1">
           <ChatPanel messages={messages} isStreaming={isStreaming} streamingText={streamingText} onSend={handleSend} />
         </div>

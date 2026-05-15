@@ -86,7 +86,6 @@ Local auth bridge baseline for Sprint 2:
 
 - [Backend Documentation](backend/README.md)
 - [Frontend Documentation](frontend/README.md)
-- [API Documentation](docs/API.md)
 - [Deployment Guide](docs/DEPLOYMENT.md)
 
 ## Testing
@@ -99,6 +98,7 @@ uv run pytest tests -q
 # Frontend tests
 cd frontend
 npm run lint
+npm run type-check
 npm run build
 
 # Local app smoke check (frontend + backend servers must already be running)
@@ -122,13 +122,13 @@ railway up
 
 - ✅ Sprint 1: Socratic AI Engine
 - ✅ Sprint 2: Core UI, auth integration, session flow stabilization
-- ⏳ Sprint 3: Progress, roles, and auth hardening
+- ✅ Sprint 3: Progress, roles, and auth hardening
 - ⏳ Sprint 4: UX polish, testing, and launch prep
 
 Current branch verification:
 
 - backend tests pass with PostgreSQL-backed async fixtures
-- frontend lint/build pass
+- frontend lint/type-check/build pass
 - live backend auth/session CRUD smoke path is working locally
 
 Known boundary:

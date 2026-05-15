@@ -1,9 +1,32 @@
-from fastapi import FastAPI
+import sentry_sdk
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+from sentry_sdk.integrations.fastapi import FastApiIntegration
 from toan_socratic.config import settings
+from toan_socratic.db.database import get_db
 from toan_socratic.routers import admin, auth, problems, progress, sessions, users
 
+_SENTRY_INITIALIZED = False
+
+
+def init_sentry() -> None:
+    global _SENTRY_INITIALIZED
+
+    if _SENTRY_INITIALIZED or not settings.sentry_dsn:
+        return
+
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        environment=settings.sentry_environment,
+        traces_sample_rate=settings.sentry_traces_sample_rate,
+        integrations=[FastApiIntegration()],
+    )
+    _SENTRY_INITIALIZED = True
+
 def create_app(cors_origins: list[str] | None = None) -> FastAPI:
+    init_sentry()
     app = FastAPI(
         title="Toán Socratic API",
         description="AI-powered Vietnamese math tutor for Grade 12 students",
@@ -38,6 +61,12 @@ def create_app(cors_origins: list[str] | None = None) -> FastAPI:
     async def health():
         """Health check endpoint"""
         return {"status": "ok"}
+
+    @app.get("/ready")
+    async def ready(db: AsyncSession = Depends(get_db)):
+        """Readiness probe that verifies database connectivity."""
+        await db.execute(text("SELECT 1"))
+        return {"status": "ready"}
 
     return app
 

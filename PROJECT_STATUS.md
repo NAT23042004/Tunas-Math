@@ -3,10 +3,10 @@
 ## Overall Status
 
 - Branch: `feat/sprint2-frontend`
-- Phase: Sprint 2 complete
-- State: core backend/frontend contracts are aligned, protected for local/staging, and verified locally through smoke and browser auth flows
+- Phase: Sprint 3 complete
+- State: core backend/frontend contracts are aligned, protected for local/staging, and ready for Sprint 4 launch-prep work across deploy readiness, monitoring, and UX polish
 
-Sprint 2 is effectively implemented, but there is still one clear boundary: the backend JWT token route is a protected local/staging bridge, not a production-grade auth exchange.
+Sprint 3 is effectively implemented, but there is still one clear boundary: the backend JWT token route is a protected local/staging bridge, not a production-grade auth exchange.
 
 ## What Is Working
 
@@ -97,6 +97,6 @@ Without that step, live API requests fail with missing-table errors from Postgre
 
 ## Next Recommended Work
 
-1. Replace the current backend JWT bridge with a trusted production auth exchange in Sprint 3.
-2. Clean up remaining dependency deprecation warnings once the product path is stable.
+1. Complete Sprint 4 launch prep: deploy readiness, Sentry setup, smoke checks, and route-level UX fallback states.
+2. Replace the current backend JWT bridge with a trusted production auth exchange in a follow-up production auth sprint.
 3. Expand automated coverage around the NextAuth bridge so the browser auth path has a regression check beyond manual smoke verification.
