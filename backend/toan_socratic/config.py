@@ -1,7 +1,17 @@
 from typing import Optional
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
+
+
+def normalize_database_url(value: str) -> str:
+    """Use SQLAlchemy's asyncpg driver when providers expose a plain Postgres URL."""
+    if value.startswith("postgresql://"):
+        return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+    if value.startswith("postgres://"):
+        return value.replace("postgres://", "postgresql+asyncpg://", 1)
+    return value
 
 
 class Settings(BaseSettings):
@@ -58,6 +68,11 @@ class Settings(BaseSettings):
     # NextAuth
     nextauth_secret: str
     nextauth_url: str = "http://localhost:3000"
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        return normalize_database_url(value)
 
     @property
     def parsed_cors_origins(self) -> list[str]:
