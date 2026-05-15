@@ -41,6 +41,7 @@ async def _build_mastery_map(db: AsyncSession, user_id: UUID) -> dict:
     now = datetime.utcnow()
     today = now.date()
     recent_window_start = datetime.combine(today - timedelta(days=29), time.min)
+    recent_window_end = datetime.combine(today, time.max)
     completion_timestamp = func.coalesce(Session.ended_at, Session.started_at)
 
     dates_result = await db.execute(
@@ -48,7 +49,7 @@ async def _build_mastery_map(db: AsyncSession, user_id: UUID) -> dict:
             Session.user_id == user_id,
             Session.status == SessionStatus.COMPLETED,
             completion_timestamp >= recent_window_start,
-            completion_timestamp <= now,
+            completion_timestamp <= recent_window_end,
         ).order_by(completion_timestamp.desc())
     )
     session_dates = list(dates_result.scalars().all())
