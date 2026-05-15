@@ -2,6 +2,9 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import EmptyState from '@/components/EmptyState';
+import ErrorState from '@/components/ErrorState';
+import LoadingState from '@/components/LoadingState';
 import { getSessions } from '@/lib/api';
 
 export default function HistoryPage() {
@@ -10,8 +13,23 @@ export default function HistoryPage() {
     queryFn: getSessions,
   });
 
-  if (isLoading) return <div className="p-8">Dang tai...</div>;
-  if (error) return <div className="p-8 text-red-600">Loi khi tai lich su hoc tap.</div>;
+  if (isLoading) {
+    return (
+      <LoadingState
+        title="Dang tai lich su hoc tap"
+        message="Cac phien hoc truoc day dang duoc truy xuat."
+      />
+    );
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        title="Khong tai duoc lich su hoc tap"
+        message="Vui long thu lai sau it phut."
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 p-4 md:p-8">
@@ -45,9 +63,12 @@ export default function HistoryPage() {
         ))}
 
         {data?.length === 0 && (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-slate-500">
-            Chua co phien hoc nao. Hay bat dau mot phien moi.
-          </div>
+          <EmptyState
+            title="Chua co phien hoc nao"
+            message="Khi ban bat dau hoc, lich su va tong ket tung phien se xuat hien tai day."
+            href="/session/new"
+            ctaLabel="Bat dau phien hoc"
+          />
         )}
       </div>
     </div>

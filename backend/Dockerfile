@@ -21,13 +21,13 @@ COPY pyproject.toml uv.lock ./
 
 FROM base AS development
 
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-dev-deps,target=/root/.cache/uv \
     uv sync --locked --no-install-project
 
 # Copy application code after dependency installation
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-dev-project,target=/root/.cache/uv \
     uv sync --locked
 
 # Create non-root user
@@ -43,12 +43,14 @@ CMD ["uv", "run", "uvicorn", "toan_socratic.main:app", "--host", "0.0.0.0", "--p
 
 FROM base AS production
 
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-prod-deps,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-install-project
 
 COPY . .
 
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN chmod +x /app/scripts/start.sh
+
+RUN --mount=type=cache,id=uv-prod-project,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
@@ -59,4 +61,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
 
-CMD ["uv", "run", "uvicorn", "toan_socratic.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["./scripts/start.sh"]

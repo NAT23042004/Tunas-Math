@@ -2,15 +2,45 @@
 
 import Link from 'next/link';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import EmptyState from '@/components/EmptyState';
+import ErrorState from '@/components/ErrorState';
+import LoadingState from '@/components/LoadingState';
 import MasteryRadar from '@/components/MasteryRadar';
 import { useDashboard } from '@/lib/useDashboard';
 
 export default function DashboardPage() {
   const { data, isLoading, error } = useDashboard();
 
-  if (isLoading) return <div className="p-8">Dang tai...</div>;
-  if (error) return <div className="p-8 text-red-600">Loi: {error.message}</div>;
-  if (!data) return <div className="p-8">Khong co du lieu</div>;
+  if (isLoading) {
+    return (
+      <LoadingState
+        title="Dang tai bang tien do"
+        message="Thong ke mastery va hoat dong 7 ngay dang duoc tong hop."
+      />
+    );
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        title="Khong tai duoc bang tien do"
+        message={error.message}
+      />
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="p-4 md:p-8">
+        <EmptyState
+          title="Chua co du lieu tien do"
+          message="Hay hoan thanh mot vai phien hoc de he thong bat dau hien thi mastery va de xuat on tap."
+          href="/session/new"
+          ctaLabel="Bat dau phien hoc"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-4 md:p-8">

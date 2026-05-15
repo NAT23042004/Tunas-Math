@@ -21,6 +21,7 @@ dependencies = [
     "setuptools==68.0.0",
     "pgvector>=0.4.2",
     "aiosqlite>=0.22.1",
+    "sentry-sdk[fastapi]>=2.30.0",
 ]
 
 [project.optional-dependencies]

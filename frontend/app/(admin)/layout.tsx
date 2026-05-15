@@ -3,6 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import LoadingState from '@/components/LoadingState';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -13,7 +14,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     else if (session && session.user.role !== 'admin') router.push('/dashboard');
   }, [session, status, router]);
 
-  if (status === 'loading') return <div className="p-8 text-center">Đang tải...</div>;
+  if (status === 'loading') {
+    return (
+      <LoadingState
+        title="Dang xac thuc quan tri"
+        message="Quyen truy cap dang duoc xac minh."
+        fullHeight
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">

@@ -1,10 +1,19 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import type { Message, SolidSpec } from '@/types';
-import GeometryViewer from './GeometryViewer';
+
+const GeometryViewer = dynamic(() => import('./GeometryViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[300px] items-center justify-center rounded-3xl border border-slate-200 bg-slate-50 text-sm text-slate-500">
+      Dang tai hinh hoc 3D...
+    </div>
+  ),
+});
 
 interface MessageBubbleProps {
   message: Message;

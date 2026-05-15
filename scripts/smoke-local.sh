@@ -41,20 +41,9 @@ echo "Auth session: $AUTH_SESSION_JSON"
 
 echo "==> Checking backend"
 curl -fsS "$BACKEND_URL/health" >/dev/null
+curl -fsS "$BACKEND_URL/ready" >/dev/null
 echo "Backend OK"
-
-echo "==> Checking backend database readiness"
-if ! curl -fsS "$BACKEND_URL/api/problems?limit=1" >/dev/null; then
-  fail "backend is reachable, but the database is not ready.
-
-Likely fixes:
-  1. Start Postgres:
-     docker compose up -d postgres
-  2. If the database is fresh or empty, initialize it:
-     cd backend && uv run python init_db.py
-"
-fi
-echo "Backend database OK"
+echo "Backend readiness OK"
 
 EMAIL="smoke-$(date +%s)@example.com"
 NAME="Smoke Test User"

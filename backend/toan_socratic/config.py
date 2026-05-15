@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://user:pass@localhost:5432/toansc"
     redis_url: str = "redis://redis:6379"
     cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    sentry_dsn: Optional[str] = None
+    sentry_environment: str = "development"
+    sentry_traces_sample_rate: float = 0.0
 
     # JWT Configuration
     jwt_secret: str

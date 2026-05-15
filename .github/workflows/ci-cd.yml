@@ -81,6 +81,10 @@ jobs:
         working-directory: ./frontend
         run: npm run type-check
 
+      - name: Run production build
+        working-directory: ./frontend
+        run: npm run build
+
   # Docker Build Test
   docker-build:
     runs-on: ubuntu-latest
@@ -135,6 +139,9 @@ jobs:
     environment:
       name: staging
       url: https://staging.toan-socratic.com
+    env:
+      BACKEND_URL: ${{ secrets.STAGING_BACKEND_URL }}
+      FRONTEND_URL: ${{ secrets.STAGING_FRONTEND_URL }}
 
     steps:
       - uses: actions/checkout@v4
@@ -146,13 +153,30 @@ jobs:
           service: toan-socratic-backend
           command: up
 
-      - name: Deploy to Vercel (Frontend)
-        uses: amondnet/vercel-action@v20
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod --prebuilt'
+          node-version: '18'
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Build and deploy frontend with Vercel CLI
+        working-directory: ./frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          vercel pull --yes --environment=preview --token="$VERCEL_TOKEN"
+          vercel build --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --token="$VERCEL_TOKEN"
+
+      - name: Post-deploy smoke checks
+        run: |
+          curl -fsS "$BACKEND_URL/health" >/dev/null
+          curl -fsS "$BACKEND_URL/ready" >/dev/null
+          curl -fsS "$FRONTEND_URL/api/auth/session" >/dev/null
 
   # Deploy to Production (on push to main)
   deploy-production:
@@ -162,6 +186,9 @@ jobs:
     environment:
       name: production
       url: https://toan-socratic.com
+    env:
+      BACKEND_URL: ${{ secrets.PRODUCTION_BACKEND_URL }}
+      FRONTEND_URL: ${{ secrets.PRODUCTION_FRONTEND_URL }}
 
     steps:
       - uses: actions/checkout@v4
@@ -173,13 +200,30 @@ jobs:
           service: toan-socratic-backend
           command: up
 
-      - name: Deploy to Vercel (Frontend)
-        uses: amondnet/vercel-action@v20
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod --prebuilt'
+          node-version: '18'
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Build and deploy frontend with Vercel CLI
+        working-directory: ./frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+
+      - name: Post-deploy smoke checks
+        run: |
+          curl -fsS "$BACKEND_URL/health" >/dev/null
+          curl -fsS "$BACKEND_URL/ready" >/dev/null
+          curl -fsS "$FRONTEND_URL/api/auth/session" >/dev/null
 
       - name: Notify deployment
         uses: 8398a7/action-slack@v3
