@@ -81,7 +81,8 @@ Local auth bridge baseline for Sprint 2:
 - **Docker** - Containerization
 - **GitHub Actions** - CI/CD
 - **Vercel** - Frontend deployment
-- **Railway** - Backend deployment
+- **Render** - Backend deployment
+- **Supabase** - Managed PostgreSQL
 
 ## Documentation
 
@@ -114,9 +115,9 @@ make smoke-local
 vercel --prod
 ```
 
-### Backend (Railway)
+### Backend (Render)
 ```bash
-railway up
+# See docs/RENDER_MIGRATION.md
 ```
 
 ## Project Status
