@@ -43,7 +43,7 @@ jobs:
         working-directory: ./backend
         env:
           TEST_DATABASE_URL: postgresql+asyncpg://toan_user:toan_password@localhost:5432/toansc
-          ANTHROPIC_API_KEY: test_key
+          LLM_API_KEY: test_key
           JWT_SECRET: test_secret
           NEXTAUTH_SECRET: test_nextauth_secret
         run: |
@@ -146,12 +146,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Railway (Backend)
-        uses: railwayapp/cli-action@v1.0.0
-        with:
-          railway-token: ${{ secrets.RAILWAY_TOKEN }}
-          service: toan-socratic-backend
-          command: up
+      - name: Backend deploy is managed by Render
+        run: |
+          echo "Render deploys the backend from render.yaml after checks pass."
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -174,9 +171,7 @@ jobs:
 
       - name: Post-deploy smoke checks
         run: |
-          curl -fsS "$BACKEND_URL/health" >/dev/null
-          curl -fsS "$BACKEND_URL/ready" >/dev/null
-          curl -fsS "$FRONTEND_URL/api/auth/session" >/dev/null
+          bash scripts/smoke-deploy.sh
 
   # Deploy to Production (on push to main)
   deploy-production:
@@ -193,12 +188,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Railway (Backend)
-        uses: railwayapp/cli-action@v1.0.0
-        with:
-          railway-token: ${{ secrets.RAILWAY_TOKEN }}
-          service: toan-socratic-backend
-          command: up
+      - name: Backend deploy is managed by Render
+        run: |
+          echo "Render deploys the backend from render.yaml after checks pass."
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -221,9 +213,7 @@ jobs:
 
       - name: Post-deploy smoke checks
         run: |
-          curl -fsS "$BACKEND_URL/health" >/dev/null
-          curl -fsS "$BACKEND_URL/ready" >/dev/null
-          curl -fsS "$FRONTEND_URL/api/auth/session" >/dev/null
+          bash scripts/smoke-deploy.sh
 
       - name: Notify deployment
         uses: 8398a7/action-slack@v3
