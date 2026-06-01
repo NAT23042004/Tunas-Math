@@ -120,6 +120,11 @@ vercel --prod
 # See docs/RENDER_MIGRATION.md
 ```
 
+Pilot deployment runbook:
+
+- [Deployment Guide](docs/DEPLOYMENT.md)
+- [Render Migration Guide](docs/RENDER_MIGRATION.md)
+
 ## Project Status
 
 - ✅ Sprint 1: Socratic AI Engine
@@ -127,11 +132,13 @@ vercel --prod
 - ✅ Sprint 3: Progress, roles, and auth hardening
 - ⏳ Sprint 4: UX polish, testing, and launch prep
 
-Current branch verification:
+Current status:
 
-- backend tests pass with PostgreSQL-backed async fixtures
-- frontend lint/type-check/build pass
-- live backend auth/session CRUD smoke path is working locally
+- Sprint 3 is complete.
+- Sprint 4 launch prep is in progress on deploy readiness, monitoring, smoke checks, and pilot runbook coverage.
+- Backend deploy startup runs migrations and seed checks before serving.
+- Use `make smoke-local` for the local full app smoke path.
+- Use `scripts/smoke-deploy.sh` for deployed backend/frontend availability checks.
 
 Known boundary:
 
