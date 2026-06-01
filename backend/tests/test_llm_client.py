@@ -11,8 +11,21 @@ class TestLLMClient:
     """Test LLM client functionality"""
 
     @pytest.mark.unit
-    def test_client_initialization(self):
+    def test_client_initialization(self, monkeypatch: pytest.MonkeyPatch):
         """Test LLM client initialization"""
+        monkeypatch.setattr(
+            "toan_socratic.ai.llm_client.settings.llm_provider",
+            "anthropic",
+        )
+        monkeypatch.setattr(
+            "toan_socratic.ai.llm_client.settings.llm_model",
+            "claude-sonnet-4-6",
+        )
+        monkeypatch.setattr(
+            "toan_socratic.ai.llm_client.settings.llm_api_key",
+            "test-key",
+        )
+
         client = LLMClient()
 
         assert client.provider == "anthropic"
