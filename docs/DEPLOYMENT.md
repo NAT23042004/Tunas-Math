@@ -4,6 +4,11 @@ This guide is the pilot launch runbook. It assumes the backend is deployed as a
 Render Docker service, the frontend is deployed on Vercel, and PostgreSQL is
 hosted by Supabase.
 
+Production auth replacement is tracked separately in
+[Production Auth Replacement Follow-Up](PRODUCTION_AUTH_FOLLOWUP.md). Sprint 4
+launch prep does not change the current Google, NextAuth, or backend JWT bridge
+API contract.
+
 ## Targets
 
 - Frontend: Vercel

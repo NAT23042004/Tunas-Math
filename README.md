@@ -124,6 +124,7 @@ Pilot deployment runbook:
 
 - [Deployment Guide](docs/DEPLOYMENT.md)
 - [Render Migration Guide](docs/RENDER_MIGRATION.md)
+- [Production Auth Replacement Follow-Up](docs/PRODUCTION_AUTH_FOLLOWUP.md)
 
 ## Project Status
 
@@ -142,4 +143,4 @@ Current status:
 
 Known boundary:
 
-- `POST /api/auth/token` now requires the shared bridge header for local/staging use, but it is still not the final production auth design
+- `POST /api/auth/token` now requires the shared bridge header for local/staging use, but it is still not the final production auth design. See [Production Auth Replacement Follow-Up](docs/PRODUCTION_AUTH_FOLLOWUP.md).
