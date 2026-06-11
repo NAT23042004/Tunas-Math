@@ -83,6 +83,22 @@ Expected:
 - `/ready` returns `{"status":"ready"}`
 - `/api/problems` returns the seeded sample problems
 
+For release smoke checks, prefer the reusable deploy smoke script after both the
+backend and frontend are deployed:
+
+```bash
+BACKEND_URL=https://<your-render-service>.onrender.com \
+FRONTEND_URL=https://<your-vercel-app>.vercel.app \
+scripts/smoke-deploy.sh
+```
+
+For a full local app smoke path from a fresh checkout, start the local backend
+and frontend first, then run:
+
+```bash
+make smoke-local
+```
+
 ## 5. Point Vercel To Render
 
 Update Vercel frontend environment:
@@ -115,5 +131,10 @@ Then verify the frontend can:
 - sign in
 - start a session
 - send one message
+
+If a new Render release fails `/health`, roll back to the previous Render deploy.
+If `/health` passes but `/ready` fails, inspect migration logs and Supabase
+connectivity before retrying. If a Vercel release fails the smoke check, restore
+the previous healthy Vercel deployment alias.
 
 After those checks pass, shut down the Railway backend service.
